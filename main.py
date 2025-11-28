@@ -1,5 +1,4 @@
 from data_manager import DataManager
-from models import Wardrobe, session
 from fastapi import FastAPI, Request
 from fastapi.templating import Jinja2Templates
 
@@ -9,12 +8,14 @@ templates = Jinja2Templates(directory="templates")
 
 @app.get('/json')
 def index():
-    items = session.query(Wardrobe).all()
+    manager = DataManager()
+    items = manager.get_all_items()
     return [item.to_dict() for item in items]
 
 @app.get("/")
 def landingpage(request: Request):
-    items = session.query(Wardrobe).all()
+    manager = DataManager()
+    items = manager.get_all_items()
     return templates.TemplateResponse("wardrobe.html", {
         "request": request,
         "items": items
