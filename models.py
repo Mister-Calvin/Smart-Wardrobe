@@ -1,9 +1,14 @@
 from sqlalchemy import create_engine, Column, Integer, String
 from sqlalchemy.orm import declarative_base, sessionmaker
+from dotenv import load_dotenv
+import os
 
+load_dotenv()
 
-engine = create_engine('sqlite:///wardrobe.db')  #PostgreSQL
-Base = declarative_base()
+POSTGRESQL_KEY = os.getenv("POSTGRESQL_KEY")
+engine = create_engine(POSTGRESQL_KEY)
+
+Base = declarative_base() #Das ist die Grundlage, aus der SQLAlchemy später Tabellen erzeugt.
 
 
 class Wardrobe(Base):
@@ -23,19 +28,18 @@ class Wardrobe(Base):
     def __repr__(self):
         return f"name:{self.name}, category:{self.category} - id: {self.id}"
 
-Base.metadata.create_all(engine)
+#Base.metadata.create_all(engine) #tabelle erstellen
 
-Session = sessionmaker(bind=engine)
+Session = sessionmaker(bind=engine, autoflush=False)  #Session = Verbindung zur Datenbank
 session = Session()
 
+if __name__ == "__main__":
+    new_item = Wardrobe(
+        name='jetzt gehts',
+        category='einfach'
+    )
 
-
-new_item = Wardrobe(
-    name = 'New Shirt',
-    category = 'New category'
-)
-
-
-#session.add(new_item)
-#session.commit()
+    session.add(new_item)
+    session.commit()
+    print(">>> Test-Item angelegt")
 
