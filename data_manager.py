@@ -78,8 +78,3 @@ class DataManager():
             return False
         finally:
             session.close()
-
-
-if __name__ == '__main__':
-    manager = DataManager()
-    manager.update_item(23, "geht der", "test?")
