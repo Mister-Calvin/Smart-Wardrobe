@@ -1,17 +1,27 @@
-from models import Base, Wardrobe
+from models import Base, Wardrobe, session
 
 class DataManager():
 
-    def create_item(self, name):
-        new_item = Wardrobe(name=name)
+    def create_item(self, name, category):
+        new_item = Wardrobe(
+            name=name,
+            category=category
+        )
         try:
-            Base.session.add(new_item)
-            Base.session.commit()
+            session.add(new_item)
+            session.commit()
             return True
         except Exception as e:
-            Base.session.rollback()
+            session.rollback()
             print(f"failed to create item:{e}")
             return False
         finally:
-            Base.session.close()
+            session.close()
 
+
+
+
+if __name__ == '__main__':
+    manager = DataManager()
+    item = manager.create_item("Mein erster Test","warm")
+    print(item)
