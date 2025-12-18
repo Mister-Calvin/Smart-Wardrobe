@@ -1,43 +1,155 @@
 {% extends "base.html" %}
-
 {% block title %}Dein Kleiderschrank{% endblock %}
 
 {% block content %}
 
-<div style="text-align: center; margin-bottom: 20px;">
-    <a href="/items/create">
-        <button type="button">Create New Item</button>
-    </a>
-</div>
+<div class="container">
 
-<table>
-    <thead>
-    <tr>
-        <th>ID</th>
-        <th>Name</th>
-        <th>Category</th>
-        <th>Aktionen</th>
-    </tr>
-    </thead>
+  <div class="page-top">
+    <div class="page-title">
+      <h1>Smart Wardrobe</h1>
+      <p>Wie ein echter Kleiderschrank: Fächer, Regalböden & Aktionen direkt am Kleidungsstück.</p>
+    </div>
 
-    <tbody>
-    {% for item in items %}
-        <tr>
-            <td>{{ item.id }}</td>
-            <td>{{ item.name }}</td>
-            <td>{{ item.category }}</td>
-            <td>
-                <a href="/items/{{ item.id }}/edit">
-                    <button type="button">Update</button>
+    <a class="btn btn-primary" href="/items/create">+ Create Item</a>
+  </div>
+
+  <div class="closet-wrap">
+    <div class="handle left"></div>
+    <div class="handle right"></div>
+
+    <div class="closet-inner">
+
+      <!-- HERO: Text + “Bild” (SVG) -->
+      <div class="hero">
+        <div class="hero-card">
+          <h2>Dein Kleiderschrank</h2>
+          <p>
+            Links siehst du Kategorien (Schrankfächer). Rechts sind die Regalböden.
+            Jedes Teil hat Update/Delete direkt am Item.
+          </p>
+          <div style="margin-top:12px; display:flex; gap:10px; flex-wrap:wrap;">
+            <a class="btn btn-ghost" href="/json">View JSON</a>
+            <span class="pill">{{ items|length }} Items</span>
+          </div>
+        </div>
+
+        <div class="hero-art" aria-label="Kleiderschrank Bild">
+          <!-- Inline SVG: Wardrobe illustration (no extra files needed) -->
+          <svg viewBox="0 0 520 260" width="100%" height="100%" xmlns="http://www.w3.org/2000/svg">
+            <defs>
+              <linearGradient id="wood" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0" stop-color="#8a5632"/>
+                <stop offset="1" stop-color="#3f2516"/>
+              </linearGradient>
+              <linearGradient id="metal" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0" stop-color="rgba(255,255,255,.75)"/>
+                <stop offset="1" stop-color="rgba(255,255,255,.18)"/>
+              </linearGradient>
+            </defs>
+
+            <!-- background glow -->
+            <rect x="0" y="0" width="520" height="260" fill="rgba(0,0,0,.18)"/>
+            <circle cx="110" cy="70" r="90" fill="rgba(110,231,255,.18)"/>
+            <circle cx="410" cy="70" r="90" fill="rgba(167,139,250,.18)"/>
+
+            <!-- wardrobe frame -->
+            <rect x="70" y="22" width="380" height="216" rx="18" fill="url(#wood)" stroke="rgba(255,255,255,.18)"/>
+            <!-- doors -->
+            <rect x="92" y="44" width="166" height="172" rx="14" fill="rgba(255,255,255,.06)" stroke="rgba(255,255,255,.14)"/>
+            <rect x="262" y="44" width="166" height="172" rx="14" fill="rgba(255,255,255,.06)" stroke="rgba(255,255,255,.14)"/>
+            <!-- handles -->
+            <rect x="240" y="108" width="8" height="52" rx="6" fill="url(#metal)"/>
+            <rect x="272" y="108" width="8" height="52" rx="6" fill="url(#metal)"/>
+
+            <!-- inside: rail + hangers -->
+            <rect x="120" y="72" width="280" height="10" rx="6" fill="url(#metal)" opacity="0.9"/>
+            <path d="M175 82 Q184 96 193 82" fill="none" stroke="rgba(255,255,255,.7)" stroke-width="3"/>
+            <path d="M195 82 Q204 96 213 82" fill="none" stroke="rgba(255,255,255,.7)" stroke-width="3"/>
+            <path d="M305 82 Q314 96 323 82" fill="none" stroke="rgba(255,255,255,.7)" stroke-width="3"/>
+            <path d="M325 82 Q334 96 343 82" fill="none" stroke="rgba(255,255,255,.7)" stroke-width="3"/>
+
+            <!-- folded clothes stack -->
+            <rect x="150" y="150" width="90" height="18" rx="6" fill="rgba(110,231,255,.25)"/>
+            <rect x="160" y="170" width="80" height="18" rx="6" fill="rgba(167,139,250,.22)"/>
+            <rect x="170" y="190" width="70" height="18" rx="6" fill="rgba(52,211,153,.18)"/>
+
+            <!-- shoes -->
+            <rect x="300" y="188" width="60" height="16" rx="8" fill="rgba(255,255,255,.18)"/>
+            <rect x="365" y="188" width="60" height="16" rx="8" fill="rgba(255,255,255,.14)"/>
+          </svg>
+        </div>
+      </div>
+
+      <div class="wardrobe">
+
+        <!-- Sidebar categories -->
+        <aside class="panel sidebar">
+          <h3>Kategorien</h3>
+          <ul>
+            <li>
+              <a href="#all">
+                <span>Alle</span>
+                <span class="pill">{{ items|length }}</span>
+              </a>
+            </li>
+
+            {% for group in items|groupby('category') %}
+              <li>
+                <a href="#cat-{{ (group.grouper or 'Ohne Kategorie')|lower|replace(' ', '-') }}">
+                  <span>{{ group.grouper or 'Ohne Kategorie' }}</span>
+                  <span class="pill">{{ group.list|length }}</span>
                 </a>
+              </li>
+            {% endfor %}
+          </ul>
+        </aside>
 
-                <form method="post" action="/items/{{ item.id }}/delete" style="display:inline;">
-                    <button type="submit">Delete</button>
-                </form>
-            </td>
-        </tr>
-    {% endfor %}
-    </tbody>
-</table>
+        <!-- Closet shelves -->
+        <main class="panel closet" id="all">
+
+          {% if items|length == 0 %}
+            <div class="empty">
+              Noch keine Items im Schrank. Klicke oben auf <b>Create Item</b> und leg los.
+            </div>
+          {% endif %}
+
+          {% for group in items|groupby('category') %}
+            <section class="shelf" id="cat-{{ (group.grouper or 'Ohne Kategorie')|lower|replace(' ', '-') }}">
+              <div class="shelf-head">
+                <h3>{{ group.grouper or 'Ohne Kategorie' }}</h3>
+                <span class="count">{{ group.list|length }} Teile</span>
+              </div>
+
+              <div class="shelf-body">
+                <div class="rail"></div>
+
+                <div class="closet-grid">
+                  {% for item in group.list %}
+                    <article class="item">
+                      <div class="tag">ID #{{ item.id }}</div>
+
+                      <div class="item-name">{{ item.name }}</div>
+                      <div class="item-meta">Kategorie: {{ item.category or 'Ohne Kategorie' }}</div>
+
+                      <div class="item-actions">
+                        <a class="btn btn-ghost" href="/items/{{ item.id }}/edit">✏️ Update</a>
+
+                        <form method="post" action="/items/{{ item.id }}/delete">
+                          <button class="btn btn-danger" type="submit">🗑️ Delete</button>
+                        </form>
+                      </div>
+                    </article>
+                  {% endfor %}
+                </div>
+              </div>
+            </section>
+          {% endfor %}
+
+        </main>
+      </div>
+    </div>
+  </div>
+</div>
 
 {% endblock %}
