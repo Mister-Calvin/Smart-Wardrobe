@@ -4,7 +4,10 @@ from fastapi.templating import Jinja2Templates
 from fastapi.staticfiles import StaticFiles
 from starlette.status import HTTP_303_SEE_OTHER
 from fastapi.responses import RedirectResponse
-
+import json
+import main_openai
+from fastapi import FastAPI, Form
+from fastapi.responses import JSONResponse
 
 
 app = FastAPI()
@@ -60,7 +63,28 @@ def edit_item(item_id: int, name: str = Form(...), category: str = Form(...)):
 
 
 
+#endpoint der input_for_llm.html wiedergibt mit GET
+@app.get("/input")
+def show_input_bar(request: Request):
+    return templates.TemplateResponse("input_for_llm.html", {"request": request})
 
+@app.post("/input")
+def write_json_from_input(user_input: str = Form(...)):
+    with open("input_data.json", "w", encoding="utf-8") as f:
+        json.dump(user_input, f, indent=2, ensure_ascii=False)
+    #jetzt hier das die daten in das ricntige format bringen
+
+    #einfach um erstmal das ergegebnis wiederzugeben
+    main_openai.create_answer()
+    with open("outfits.json", "r", encoding="utf-8") as f:
+        input_data = json.load(f)
+        return JSONResponse(content=input_data)
+
+
+
+
+
+# dann einer der die daten sendet mit POST
 
 #if __name__ == "__main__":
  #   import uvicorn
