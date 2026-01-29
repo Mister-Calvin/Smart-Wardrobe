@@ -13,14 +13,33 @@
         </div>
 
         <div class="form-group">
-            <label for="category">Kategorie</label>
-            <input type="text" id="category" name="category" required placeholder="z.B. Pullover, Hose, Schuhe">
+            <label for="description">Description</label>
+            <input type="text" id="description" name="description" required placeholder="kurze beschreibung des Kleidungsstücks">
         </div>
 
-        <!-- Wenn du später mehr Felder hast (Farbe, Größe, Marke...), kannst du sie hier ergänzen -->
+        <div class="form-group">
+            <label for="color">Color</label>
+            <input type="text" id="color" name="color" required placeholder="Farbe/n und/oder Muster">
+        </div>
+
+        <div class="form-group">
+            <label for="condition">Zustand der Kleidung</label>
+            <input type="text" id="condition" name="condition" required placeholder="Wie ist der zustand der Kleidung?">
+        </div>
+
+        <div class="form-group">
+            <label for="type">Typ</label>
+            <input type="text" id="type" name="type" required placeholder="z.B. Jacke, Hose, Pullover">
+        </div>
+
+        <div class="form-group">
+            <label for="score">SCORE</label>
+            <input type="text" id="score" name="score" required placeholder="gebe dem Kleidungsstück einen Score">
+        </div>
 
         <button type="submit" class="btn-primary">
             Speichern
         </button>
     </form>
 {% endblock %}
+

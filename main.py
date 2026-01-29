@@ -35,10 +35,16 @@ def show_create_form(request: Request):
     return templates.TemplateResponse("create_item.html", {"request": request})
 
 @app.post("/items/create")
-def create_item(name: str = Form(...), category: str = Form(...)):
+def create_item(name: str = Form(...),
+                description: str = Form(...),
+                color: str = Form(...),
+                condition: str = Form(...),
+                type: str = Form(...),
+                score: int = Form(...),):
     manager = DataManager()
-    manager.create_item(name=name, category=category)
+    manager.create_item(name=name, description=description, color=color, condition=condition, type=type, score=score)
     return RedirectResponse(url="/", status_code=HTTP_303_SEE_OTHER)
+
 
 @app.post("/items/{item_id}/delete")
 def delete_item(item_id: int):
@@ -56,9 +62,14 @@ def show_edit_formular(request: Request, item_id: int):
     })
 
 @app.post("/items/{item_id}/edit")
-def edit_item(item_id: int, name: str = Form(...), category: str = Form(...)):
+def edit_item(item_id: int, name: str = Form(...),
+              description: str = Form(...),
+              color: str = Form(...),
+              condition: str = Form(...),
+              type: str = Form(...),
+              score: int = Form(...),):
     manager = DataManager()
-    manager.update_item(item_id, name=name, category=category)
+    manager.update_item(item_id, name=name, description=description, color=color, condition=condition, type=type, score=score)
     return RedirectResponse(url="/", status_code=HTTP_303_SEE_OTHER)
 
 
@@ -69,13 +80,31 @@ def show_input_bar(request: Request):
     return templates.TemplateResponse("input_for_llm.html", {"request": request})
 
 @app.post("/input")
-def write_json_from_input(user_input: str = Form(...)):
+def write_json_from_input(user_input: str = Form(...),
+                          event_input: str = Form(...),
+                          location_input: str = Form(...),
+                          season_input: str = Form(...),
+                          weather_input: str = Form(...),
+                          mood_input: str = Form(...),):
+
+    input = {
+        "user_input": user_input,
+        "context":
+            {
+        "event_input": event_input,
+        "location_input": location_input,
+        "season_input": season_input,
+        "weather_input": weather_input,
+        "mood_input": mood_input
+        }
+    }
     with open("input_data.json", "w", encoding="utf-8") as f:
-        json.dump(user_input, f, indent=2, ensure_ascii=False)
+        json.dump(input, f, indent=2, ensure_ascii=False)
     #jetzt hier das die daten in das ricntige format bringen
 
     #einfach um erstmal das ergegebnis wiederzugeben
     main_openai.create_answer()
+
     with open("outfits.json", "r", encoding="utf-8") as f:
         input_data = json.load(f)
         return JSONResponse(content=input_data)

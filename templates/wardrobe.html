@@ -12,6 +12,7 @@
     </div>
 <form action="/input" method="get">
     <button type="submit">INPUT</button>
+    </form>
 
     <a class="btn btn-primary" href="/items/create">+ Create Item</a>
   </div>
@@ -96,7 +97,7 @@
               </a>
             </li>
 
-            {% for group in items|groupby('category') %}
+            {% for group in items|groupby('type') %}
               <li>
                 <a href="#cat-{{ (group.grouper or 'Ohne Kategorie')|lower|replace(' ', '-') }}">
                   <span>{{ group.grouper or 'Ohne Kategorie' }}</span>
@@ -116,7 +117,7 @@
             </div>
           {% endif %}
 
-          {% for group in items|groupby('category') %}
+          {% for group in items|groupby('type') %}
             <section class="shelf" id="cat-{{ (group.grouper or 'Ohne Kategorie')|lower|replace(' ', '-') }}">
               <div class="shelf-head">
                 <h3>{{ group.grouper or 'Ohne Kategorie' }}</h3>
@@ -132,7 +133,11 @@
                       <div class="tag">ID #{{ item.id }}</div>
 
                       <div class="item-name">{{ item.name }}</div>
-                      <div class="item-meta">Kategorie: {{ item.category or 'Ohne Kategorie' }}</div>
+                      <div class="item-meta">Beschreibung: {{ item.description }}</div>
+                      <div class="item-meta">Farbe: {{ item.color }}</div>
+                      <div class="item-meta">Zustand: {{ item.condition }}</div>
+                      <div class="item-meta">Typ: {{ item.type }}</div>
+                      <div class="item-meta">Score: {{ item.score }}</div>
 
                       <div class="item-actions">
                         <a class="btn btn-ghost" href="/items/{{ item.id }}/edit">✏️ Update</a>
