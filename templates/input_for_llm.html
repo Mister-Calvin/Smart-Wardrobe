@@ -1,13 +1,63 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="de">
 <head>
   <meta charset="UTF-8">
-  <title>Title</title>
+  <title>Outfit Input</title>
 </head>
 <body>
+
 <form action="/input" method="post">
-    <input type="text" name="user_input" placeholder="Was soll ich anziehen?">
-    <button type="submit">Absenden</button>
+  <input type="text" name="user_input" placeholder="Was soll ich anziehen?" required>
+  <button type="submit">Absenden</button>
+
+  <details>
+    <summary>Kontext hinzufügen</summary>
+
+    <p>
+      <label>Event:</label><br>
+      <select name="event_input">
+        <option value="">-- wählen --</option>
+        <option value="Vorstellungsgespräch">Vorstellungsgespräch</option>
+        <option value="Date">Date</option>
+        <option value="Alltag">Alltag</option>
+        <option value="Feier">Feier</option>
+      </select>
+    </p>
+
+    <p>
+      <label>Location:</label><br>
+      <select name="location_input">
+        <option value="">-- wählen --</option>
+        <option value="Büro">Büro</option>
+        <option value="Outdoor">Outdoor</option>
+        <option value="Restaurant">Restaurant</option>
+        <option value="Zuhause">Zuhause</option>
+      </select>
+    </p>
+
+    <p>
+      <label>Season:</label><br>
+      <select name="season_input">
+        <option value="">-- wählen --</option>
+        <option value="Winter">Winter</option>
+        <option value="Frühling">Frühling</option>
+        <option value="Sommer">Sommer</option>
+        <option value="Herbst">Herbst</option>
+      </select>
+    </p>
+
+    <p>
+      <label>Weather:</label><br>
+      <input type="text" name="weather_input" placeholder="z.B. kalt, Regen">
+    </p>
+
+    <p>
+      <label>Mood:</label><br>
+      <input type="text" name="mood_input" placeholder="z.B. selbstbewusst, ruhig">
+    </p>
+
+  </details>
 </form>
+
 </body>
 </html>
