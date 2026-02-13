@@ -1,13 +1,14 @@
 from data_manager import DataManager
+from fastapi.staticfiles import StaticFiles
+from pathlib import Path
 from fastapi import FastAPI, Request, Form
 from fastapi.templating import Jinja2Templates
-from fastapi.staticfiles import StaticFiles
-from starlette.status import HTTP_303_SEE_OTHER
 from fastapi.responses import RedirectResponse
-import json
-import openai_model1
-from fastapi import FastAPI, Form
-from fastapi.responses import JSONResponse
+from starlette.status import HTTP_303_SEE_OTHER
+from main import build_outfit
+
+ANSWER_TXT_PATH = Path("extend_llm_answer.txt")
+
 
 
 app = FastAPI()
@@ -79,7 +80,7 @@ def edit_item(item_id: int, name: str = Form(...),
 def show_input_bar(request: Request):
     return templates.TemplateResponse("input_for_llm.html", {"request": request})
 
-from this_is_main import build_outfit
+
 @app.post("/input")
 def write_json_from_input(
     request: Request,
@@ -105,13 +106,6 @@ def write_json_from_input(
 
     return RedirectResponse(url="/answer", status_code=HTTP_303_SEE_OTHER)
 
-from pathlib import Path
-from fastapi import FastAPI, Request, Form
-from fastapi.templating import Jinja2Templates
-from fastapi.responses import RedirectResponse
-from starlette.status import HTTP_303_SEE_OTHER
-
-ANSWER_TXT_PATH = Path("extend_llm_answer.txt")
 
 @app.get("/answer")
 def show_answer_page(request: Request):
