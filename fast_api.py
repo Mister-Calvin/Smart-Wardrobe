@@ -5,7 +5,7 @@ from fastapi.staticfiles import StaticFiles
 from starlette.status import HTTP_303_SEE_OTHER
 from fastapi.responses import RedirectResponse
 import json
-import main_openai
+import openai_model1
 from fastapi import FastAPI, Form
 from fastapi.responses import JSONResponse
 
@@ -79,35 +79,52 @@ def edit_item(item_id: int, name: str = Form(...),
 def show_input_bar(request: Request):
     return templates.TemplateResponse("input_for_llm.html", {"request": request})
 
+from this_is_main import build_outfit
 @app.post("/input")
-def write_json_from_input(user_input: str = Form(...),
-                          event_input: str = Form(...),
-                          location_input: str = Form(...),
-                          season_input: str = Form(...),
-                          weather_input: str = Form(...),
-                          mood_input: str = Form(...),):
-
-    input = {
+def write_json_from_input(
+    request: Request,
+    user_input: str = Form(...),
+    event_input: str = Form(...),
+    location_input: str = Form(...),
+    season_input: str = Form(...),
+    weather_input: str = Form(...),
+    mood_input: str = Form(...),
+):
+    payload = {
         "user_input": user_input,
-        "context":
-            {
-        "event_input": event_input,
-        "location_input": location_input,
-        "season_input": season_input,
-        "weather_input": weather_input,
-        "mood_input": mood_input
-        }
+        "context": {
+            "event_input": event_input,
+            "location_input": location_input,
+            "season_input": season_input,
+            "weather_input": weather_input,
+            "mood_input": mood_input,
+        },
     }
-    with open("input_data.json", "w", encoding="utf-8") as f:
-        json.dump(input, f, indent=2, ensure_ascii=False)
-    #jetzt hier das die daten in das ricntige format bringen
 
-    #einfach um erstmal das ergegebnis wiederzugeben
-    main_openai.create_answer()
+    build_outfit(payload)
 
-    with open("outfits.json", "r", encoding="utf-8") as f:
-        input_data = json.load(f)
-        return JSONResponse(content=input_data)
+    return RedirectResponse(url="/answer", status_code=HTTP_303_SEE_OTHER)
+
+from pathlib import Path
+from fastapi import FastAPI, Request, Form
+from fastapi.templating import Jinja2Templates
+from fastapi.responses import RedirectResponse
+from starlette.status import HTTP_303_SEE_OTHER
+
+ANSWER_TXT_PATH = Path("extend_llm_answer.txt")
+
+@app.get("/answer")
+def show_answer_page(request: Request):
+    answer_text = None
+    if ANSWER_TXT_PATH.exists() and ANSWER_TXT_PATH.stat().st_size > 0:
+        answer_text = ANSWER_TXT_PATH.read_text(encoding="utf-8")
+
+    return templates.TemplateResponse(
+        "answer.html",
+        {"request": request, "answer_text": answer_text},
+    )
+
+
 
 
 

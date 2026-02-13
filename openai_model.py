@@ -7,8 +7,7 @@ import json
 
 
 manager = DataManager()
-all_items = manager.get_all_items()
-
+all_items = manager.get_all_items()   #um alle items zu bekommen. das soll noch in eine vectorDB gepackt werden
 load_dotenv()
 
 API_KEY = os.getenv("OPENAI_API_KEY")
@@ -33,17 +32,6 @@ def get_input():
 
 
 
-def context_input():
-
-    context = {
-        "event": get_input()["context"]["event_input"],
-        "location": get_input()["context"]["location_input"],
-        "season": get_input()["context"]["season_input"],
-        "weather": get_input()["context"]["weather_input"],
-        "mood": get_input()["context"]["mood_input"],
-    }
-    return context
-
 def create_response():
     response = client.responses.parse(                                         #client.chat.completions.create
         input=[
@@ -55,18 +43,14 @@ def create_response():
                     f"{all_items} - Wenn diese Liste leer ist kannst du keine Outfits erstellen, das ist die grundlage"
                     "Erstelle standartmäßig 3 unterschiedliche Outfit-Vorschläge.\n"
                     "Jedes Outfit muss sinnvoll, vollständig und realistisch sein.\n"
-                    "Macht es sinn mehr als 3 Outfits vorzuschlagen mach das"
-                    "Outfits für eine ganze Woche ein neues Outfit pro Tag, also 7 verschiedene Outfit-Vorschläge"
-                    "Gib das Ergebnis AUSSCHLIESSLICH im vorgegebenen JSON-Format zurück."
+                    "Outfits für eine ganze Woche ein neues Outfit pro Tag, also 7 verschiedene Outfit-Vorschläge\n"
+                    "Gib das Ergebnis AUSSCHLIESSLICH im vorgegebenen JSON-Format zurück.\n"
                     "Du darfst NIEMALS Haluzinieren! Du musst dann die felder mit unbekannt ausfüllen"
                 )
             },
             {
                 "role": "user",
-                "content": f"""
-                {get_input()}
-                Hier sind zusätzliche Kontextdaten (JSON): {context_input()}
-                """
+                "content": f"{get_input()}"
             }
         ],
         model="gpt-4o-mini",
@@ -77,10 +61,13 @@ def create_response():
     )
     return response
 
+
+
 def create_answer():
     answer = create_response().output_parsed
     outfits_dict = {}
     for i, outfit in enumerate(answer.outfits, start=1):
+
         outfits_dict[f"outfit_{i}"] = {
             "user_input": get_input(),
             "title": outfit.title,
@@ -92,6 +79,7 @@ def create_answer():
                 for name, item_id in zip(outfit.items, outfit.items_ids)
             ]
         }
+
         print(f"\nOutfit {i}: {outfit.title}")
         print(outfit.summary)
         print(f"Clothes : {outfit.items} - {outfit.items_ids}")
