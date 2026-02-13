@@ -1,0 +1,19 @@
+<!doctype html>
+<html lang="de">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Antwort</title>
+</head>
+<body>
+  <h1>Extended Answer</h1>
+
+  <p><a href="/input">Zurück</a></p>
+
+  {% if answer_text %}
+    <pre style="white-space: pre-wrap; word-break: break-word;">{{ answer_text }}</pre>
+  {% else %}
+    <p>Keine Antwort gefunden (Datei fehlt oder ist leer).</p>
+  {% endif %}
+</body>
+</html>
