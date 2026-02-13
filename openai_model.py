@@ -2,91 +2,99 @@ import os
 from dotenv import load_dotenv
 from openai import OpenAI
 from pydantic import BaseModel
-from data_manager import DataManager
 import json
+from typing import List, Optional
+from similarity_search import break_down_data_for_llm, convert_selected_data_into_list_of_dictionary, return_data_with_vector_similarity_search
+from data_into_vector import input_to_vector
 
-
-manager = DataManager()
-all_items = manager.get_all_items()   #um alle items zu bekommen. das soll noch in eine vectorDB gepackt werden
 load_dotenv()
 
 API_KEY = os.getenv("OPENAI_API_KEY")
-
 client = OpenAI(api_key=API_KEY)
+
+class OutfitSlots(BaseModel):
+    top_id: int
+    bottom_id: int
+    shoes_id: int
+
+    headwear_id: Optional[int] = None
+    outerwear_id: Optional[int] = None
+    socks_id: Optional[int] = None
+    bag_id: Optional[int] = None
+    accessory_id: Optional[int] = None
+
+    all_ids: List[int]
 
 
 class OutfitSuggestion(BaseModel):
-    title: str                          # z. B. "Elegantes Büro-Outfit"
-    summary: str                        # Beschreibung + Begründung
-    items: list[str]                    # Liste der empfohlenen Kleidungsstücke
-    items_ids: list[int]
+    name: str
+    how_to_wear: str
+    rationale: str
+    slots: OutfitSlots
+
 
 class OutfitSuggestions(BaseModel):
-    outfits: list[OutfitSuggestion]
-
-
-def get_input():
-    with open("input_data.json", "r", encoding="utf-8") as file:
-        input_text = json.load(file)
-        return input_text
+    outfits: List[OutfitSuggestion]
 
 
 
-def create_response():
-    response = client.responses.parse(                                         #client.chat.completions.create
-        input=[
-            {
-                "role": "system",
-                "content": (
-                    "Du bist SmartWardrobe AI – ein professioneller Mode-Experte.\n"
-                    "Du benutzt AUSSCHLIESSLICH Kleidungsstücke aus folgender Liste:\n"
-                    f"{all_items} - Wenn diese Liste leer ist kannst du keine Outfits erstellen, das ist die grundlage"
-                    "Erstelle standartmäßig 3 unterschiedliche Outfit-Vorschläge.\n"
-                    "Jedes Outfit muss sinnvoll, vollständig und realistisch sein.\n"
-                    "Outfits für eine ganze Woche ein neues Outfit pro Tag, also 7 verschiedene Outfit-Vorschläge\n"
-                    "Gib das Ergebnis AUSSCHLIESSLICH im vorgegebenen JSON-Format zurück.\n"
-                    "Du darfst NIEMALS Haluzinieren! Du musst dann die felder mit unbekannt ausfüllen"
-                )
-            },
-            {
-                "role": "user",
-                "content": f"{get_input()}"
-            }
-        ],
+
+
+SYSTEM_PROMPT = """
+Du bist ein professioneller Mode-Berater und erstellst stylische Outfits.
+
+HARTE REGELN:
+- Verwende ausschließlich Items aus der übergebenen CANDIDATES-Liste.
+- Um Halluzinationen zu reduzieren, habe ich eine Liste mit allen erlaubten Outfit-IDs erstellt: allowed_ids
+- Erfinde keine Items, keine IDs, keine Farben, keine Marken.
+- Versuche deutlich unterschiedliche Outfits zu erstellen, sodass sich IDs nicht wiederholen
+- Achte besonders auf Wettergerechte Kleidung
+- Erstelle genau 3 Outfits.
+- Gib die Antwort ausschließlich im vorgegebenen JSON-Format (Schema) zurück.
+"""
+
+
+def create_response(input_data):
+    query_vec = input_to_vector(input_data)
+    raw_results = return_data_with_vector_similarity_search(query_vec)
+    items = convert_selected_data_into_list_of_dictionary(raw_results)
+    items, allowed_ids = break_down_data_for_llm(items)
+
+    payload = {
+        "user_input": input_data,
+        "candidates": items,
+        "allowed_ids": allowed_ids,
+    }
+
+    response = client.responses.parse(
         model="gpt-4o-mini",
-        temperature=0.7,
+        temperature=0.3,
         max_output_tokens=500,
+        input=[
+            {"role": "system", "content": SYSTEM_PROMPT},
+            {"role": "user", "content": json.dumps(payload, ensure_ascii=False)},
+        ],
         text_format=OutfitSuggestions
-
     )
-    return response
+    #print("USAGE:", response.usage)
+    return response, allowed_ids
 
 
-
-def create_answer():
-    answer = create_response().output_parsed
-    outfits_dict = {}
-    for i, outfit in enumerate(answer.outfits, start=1):
-
-        outfits_dict[f"outfit_{i}"] = {
-            "user_input": get_input(),
-            "title": outfit.title,
-            "summary": outfit.summary,
-            "items": outfit.items,
-            "items_ids": outfit.items_ids,
-            "items_with_ids": [
-                {"name": name, "id": item_id}
-                for name, item_id in zip(outfit.items, outfit.items_ids)
-            ]
-        }
-
-        print(f"\nOutfit {i}: {outfit.title}")
-        print(outfit.summary)
-        print(f"Clothes : {outfit.items} - {outfit.items_ids}")
+def create_answer(response_and_ids):
+    response, allowed_ids = response_and_ids
+    data = response.output_parsed.model_dump()
 
 
-    with open("outfits.json", "w", encoding="utf-8") as f:
-        json.dump(outfits_dict, f, indent=2, ensure_ascii=False)
-    return
+    ids_from_answer = []
+    for outfit in data["outfits"]:
+        ids_from_answer.extend(outfit["slots"]["all_ids"])
 
-#create_answer()
+
+    hallucinated = set(ids_from_answer) - set(allowed_ids)
+
+    #print("allowed_ids:", sorted(set(allowed_ids)))
+    #print("ids_from_answer:", sorted(set(ids_from_answer)))
+    #print("hallucinated:", sorted(hallucinated))
+
+    return data
+
