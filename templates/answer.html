@@ -11,7 +11,90 @@
   <p><a href="/input">Zurück</a></p>
 
   {% if answer_text %}
-    <pre style="white-space: pre-wrap; word-break: break-word;">{{ answer_text }}</pre>
+    <h2>Aktuelle Antwort</h2>
+    <pre id="answerText" style="white-space: pre-wrap; word-break: break-word; border:1px solid #ddd; padding:12px;">{{ answer_text }}</pre>
+
+    <hr/>
+
+    <h2>Chat mit der Antwort (Demo)</h2>
+
+    {% if conversation_id %}
+      <div id="chatLog" style="border:1px solid #ddd; padding:12px; height:220px; overflow:auto; background:#fafafa;"></div>
+
+      <div style="display:flex; gap:8px; margin-top:10px;">
+        <input
+          id="chatInput"
+          type="text"
+          placeholder='Beispiele: "replace: Sneaker => Boots" | "append: Bitte mit Jacke." | "delete: schwarze Socken"'
+          style="flex:1; padding:10px;"
+        />
+        <button id="sendBtn" style="padding:10px 14px;">Senden</button>
+      </div>
+
+      <p style="margin-top:10px; font-size:0.95rem; color:#444;">
+        <b>Hinweis:</b> Das ist ein Demo-Chat ohne LLM. Der Server versteht aktuell nur <code>replace:</code>, <code>append:</code> und <code>delete:</code>.
+      </p>
+
+      <script>
+        const conversationId = "{{ conversation_id }}";
+
+        const chatLog = document.getElementById("chatLog");
+        const chatInput = document.getElementById("chatInput");
+        const sendBtn = document.getElementById("sendBtn");
+        const answerTextEl = document.getElementById("answerText");
+
+        function addMsg(role, text) {
+          const div = document.createElement("div");
+          div.style.marginBottom = "10px";
+          div.innerHTML = `<b>${role}:</b> ${text}`;
+          chatLog.appendChild(div);
+          chatLog.scrollTop = chatLog.scrollHeight;
+        }
+
+        async function sendMessage() {
+          const msg = chatInput.value.trim();
+          if (!msg) return;
+
+          addMsg("Du", msg);
+          chatInput.value = "";
+
+          try {
+            const res = await fetch(`/chat/${conversationId}`, {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ message: msg })
+            });
+
+            if (!res.ok) {
+              const err = await res.json().catch(() => ({}));
+              addMsg("System", "Fehler: " + (err.detail || res.statusText));
+              return;
+            }
+
+            const data = await res.json();
+            addMsg("Bot", data.assistant_text);
+
+            // 🔥 Aktualisierte Antwort direkt in der UI ersetzen
+            answerTextEl.textContent = data.answer_text;
+
+          } catch (e) {
+            addMsg("System", "Netzwerkfehler: " + e);
+          }
+        }
+
+        sendBtn.addEventListener("click", sendMessage);
+        chatInput.addEventListener("keydown", (e) => {
+          if (e.key === "Enter") sendMessage();
+        });
+
+        // Optional: Begrüßung
+        addMsg("Bot", "Hi! Demo-Chat aktiv. Nutze replace:/append:/delete: um den Antworttext zu verändern.");
+      </script>
+
+    {% else %}
+      <p style="color:#b00;"><b>Fehler:</b> conversation_id fehlt. Stelle sicher, dass dein /input-POST den Wert an das Template übergibt.</p>
+    {% endif %}
+
   {% else %}
     <p>Keine Antwort gefunden (Datei fehlt oder ist leer).</p>
   {% endif %}
