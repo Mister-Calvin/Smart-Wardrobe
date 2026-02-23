@@ -56,6 +56,73 @@
       <input type="text" name="mood_input" placeholder="z.B. selbstbewusst, ruhig">
     </p>
 
+    <p>
+      <label>
+        <input type="checkbox" name="complete_outfit" value="1">
+        Outfit vervollständigen (Top, Bottom & Schuhe sicherstellen)
+      </label>
+    </p>
+
+  </details>
+
+  <details>
+    <summary>Filter hinzufügen</summary>
+
+    <p>
+      <label>Farben (OR, z.B. "schwarz, blau"):</label><br>
+      <input type="text" name="colors_any" placeholder='z.B. schwarz, blau'>
+    </p>
+
+    <p>
+      <label>Farben (AND, z.B. "schwarz weiß"):</label><br>
+      <input type="text" name="colors_all" placeholder='z.B. schwarz weiß'>
+    </p>
+
+    <p>
+      <label>Score (exakt):</label><br>
+      <input type="number" name="score" placeholder="z.B. 7" min="0" max="10">
+    </p>
+
+    <p>
+      <label>Score min:</label><br>
+      <input type="number" name="score_min" placeholder="z.B. 6" min="0" max="10">
+    </p>
+
+    <p>
+      <label>Score max:</label><br>
+      <input type="number" name="score_max" placeholder="z.B. 9" min="0" max="10">
+    </p>
+
+    <p>
+      <label>Zustand (OR, z.B. "neu, gut"):</label><br>
+      <input type="text" name="condition_any" placeholder='z.B. neu, gut'>
+    </p>
+
+    <p>
+      <label>Name enthält (AND, nur Name, z.B. "hoodie oversized"):</label><br>
+      <input type="text" name="name_contains" placeholder='z.B. hoodie oversized'>
+    </p>
+
+    <p>
+      <label>Description enthält (AND, nur Description, z.B. "baumwolle"):</label><br>
+      <input type="text" name="description_contains" placeholder='z.B. baumwolle'>
+    </p>
+
+    <p>
+      <label>Text ALL (AND, muss in Name ODER Description vorkommen):</label><br>
+      <input type="text" name="text_all" placeholder='z.B. hoodie wolle'>
+    </p>
+
+    <p>
+      <label>Text ANY (OR, mindestens ein Term muss vorkommen):</label><br>
+      <input type="text" name="text_any" placeholder='z.B. hoodie, wolle'>
+    </p>
+
+    <p>
+      <label>Limit (z.B. 20):</label><br>
+      <input type="number" name="limit" placeholder="z.B. 20" min="1">
+    </p>
+
   </details>
 </form>
 

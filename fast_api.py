@@ -5,15 +5,21 @@ from fastapi import FastAPI, Request, Form
 from fastapi.templating import Jinja2Templates
 from fastapi.responses import RedirectResponse
 from starlette.status import HTTP_303_SEE_OTHER
+from db_filters import filter_db_dynamic, build_filter_kwargs_from_strings
 from main import build_outfit
+import json
+from fastapi import HTTPException
+from openai_model import NotEnoughItemsForOutfitError
+from fastapi.responses import JSONResponse
+from main import build_outfit, BuildOutfitError, HallucinationError
 
-ANSWER_TXT_PATH = Path("extend_llm_answer.txt")
 
 
 
 app = FastAPI()
 templates = Jinja2Templates(directory="templates")
 app.mount("/static", StaticFiles(directory="static"), name="static")
+
 
 
 @app.get('/json')
@@ -82,15 +88,64 @@ def show_input_bar(request: Request):
 
 
 @app.post("/input")
-def write_json_from_input(
+def get_input_and_built_answer(
     request: Request,
+
+    # LLM Input
     user_input: str = Form(...),
     event_input: str = Form(...),
     location_input: str = Form(...),
     season_input: str = Form(...),
     weather_input: str = Form(...),
     mood_input: str = Form(...),
+
+    # Filter Inputs (NEU)
+    colors_any: str = Form(""),
+    colors_all: str = Form(""),
+    score: str = Form(""),
+    score_min: str = Form(""),
+    score_max: str = Form(""),
+    condition_any: str = Form(""),
+    name_contains: str = Form(""),
+    description_contains: str = Form(""),
+    text_all: str = Form(""),
+    text_any: str = Form(""),
+    limit: str = Form(""),
 ):
+    # 1) Filter kwargs bauen (NUR hier Strings -> kwargs)
+    filter_kwargs = build_filter_kwargs_from_strings(
+        colors_any=colors_any,
+        colors_all=colors_all,
+        score=score,
+        score_min=score_min,
+        score_max=score_max,
+        condition_any=condition_any,
+        name_contains=name_contains,
+        description_contains=description_contains,
+        text_all=text_all,
+        text_any=text_any,
+        limit=limit,
+    )
+
+    # 2) IDs filtern
+    filtered_ids = filter_db_dynamic(**filter_kwargs)
+
+    if not filtered_ids:
+        return templates.TemplateResponse("error.html", {"request": request,
+                                                         "message": "Filter liefern gar keine Items - Filter anpassen"})
+
+    if len(filtered_ids) < 5:
+        return templates.TemplateResponse("error.html", {"request": request, "message": "nich genügend Items zum Erstellen eines Outfits"})
+
+
+
+    with open("fast_api_filter_ids.json", "w", encoding="utf-8") as f:
+        json.dump(filtered_ids, f, ensure_ascii=False, indent=2)
+
+        #liefert die tatsächlichen ids nach den Filtern - funktioniert also
+
+
+    # 3) Payload wie gehabt + filtered_ids ergänzen
     payload = {
         "user_input": user_input,
         "context": {
@@ -99,28 +154,44 @@ def write_json_from_input(
             "season_input": season_input,
             "weather_input": weather_input,
             "mood_input": mood_input,
-        },
+        }
     }
 
-    build_outfit(payload)
-
-    return RedirectResponse(url="/answer", status_code=HTTP_303_SEE_OTHER)
-
-
-@app.get("/answer")
-def show_answer_page(request: Request):
-    answer_text = None
-    if ANSWER_TXT_PATH.exists() and ANSWER_TXT_PATH.stat().st_size > 0:
-        answer_text = ANSWER_TXT_PATH.read_text(encoding="utf-8")
+    # 4) Pipeline starten
+    answer_text = build_outfit(payload, filtered_ids)
 
     return templates.TemplateResponse(
         "answer.html",
-        {"request": request, "answer_text": answer_text},
+        {
+            "request": request,
+            "answer_text": answer_text,
+        },
+    )
+
+@app.exception_handler(NotEnoughItemsForOutfitError)
+async def handle_not_enough_items(request: Request, text: NotEnoughItemsForOutfitError):
+    return templates.TemplateResponse(
+        "error.html",
+        {"request": request, "message": str(text)},
+        status_code=422,
+    )
+
+@app.exception_handler(HallucinationError)
+async def handle_hallucination(request: Request, exc: HallucinationError):
+    return templates.TemplateResponse(
+        "error.html",
+        {"request": request, "message": str(exc)},
+        status_code=422,
     )
 
 
-
-
+@app.exception_handler(BuildOutfitError)
+async def handle_build_outfit(request: Request, exc: BuildOutfitError):
+    return templates.TemplateResponse(
+        "error.html",
+        {"request": request, "message": str(exc)},
+        status_code=500,
+    )
 
 
 
