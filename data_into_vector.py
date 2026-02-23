@@ -26,7 +26,7 @@ def input_to_vector(payload: dict) -> list[float]:
     context = payload.get("context", {}) or {}
 
     query_text = (
-        f"question: {question}\n"
+        f"question: {question} - mit passenden schuhen, top und bottom\n"
         f"event: {context.get('event_input')}\n"
         f"location: {context.get('location_input')}\n"
         f"season: {context.get('season_input')}\n"
