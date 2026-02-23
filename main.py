@@ -1,25 +1,55 @@
-from openai_model import create_response, create_answer
-from extend_llm_answer import get_all_ids_list, get_db_by_id, extended_answer
-
-payload = {
-  "user_input": "Was kann ich am besten zur Party anziehen? ",
-  "context": {
-    "event_input": "Alltag",
-    "location_input": "Outdoor",
-    "season_input": "Sommer",
-    "weather_input": "kalt",
-    "mood_input": "euphorisch"
-  }
-}
-
-def build_outfit(payload):
-    llm_answer = create_answer(create_response(payload))
-    ids = get_all_ids_list(llm_answer)        # 2) IDs daraus ziehen
-    items_by_id = get_db_by_id(ids)     # 3) DB-Daten zu den IDs holen
-    extended_answer(llm_answer, items_by_id)  # 4) Extended Ausgabe bauen
+from openai_model import create_response, create_answer, NotEnoughItemsForOutfitError
+from extend_llm_answer import build_extended_answer_text
 
 
-if __name__ == "__main__":
-    answer = build_outfit(payload)
-    print(answer)
+class BuildOutfitError(Exception):
+    """Raised when outfit generation fails after retries."""
 
+
+class HallucinationError(BuildOutfitError):
+    """Raised when the LLM keeps hallucinating ids after retries."""
+
+
+def build_outfit(payload, filtered_ids=None, max_tries=3):
+    last_error = None
+    last_invalid_reason = None
+
+    for attempt in range(1, max_tries + 1):
+        try:
+            if filtered_ids is None:
+                llm_answer = create_answer(create_response(payload))
+            else:
+                llm_answer = create_answer(create_response(payload, filtered_ids))
+
+        # diese Domain-Exception soll durchgehen zu FastAPI
+        except NotEnoughItemsForOutfitError:
+            raise
+
+        # alles andere: retry
+        except Exception as e:
+            last_error = f"Attempt {attempt}: {type(e).__name__}: {e}"
+            continue
+
+        is_valid = llm_answer.get("is_valid") is True
+        hallucinated = llm_answer.get("hallucinated_ids") or []
+
+        if is_valid and not hallucinated:
+            return build_extended_answer_text(llm_answer)
+
+        last_invalid_reason = (
+            f"Attempt {attempt}: is_valid={llm_answer.get('is_valid')} | "
+            f"hallucinated_ids={hallucinated}"
+        )
+
+    # NACH max_tries: hier müssen Exceptions hochgeworfen werden
+    if last_invalid_reason:
+        raise HallucinationError(
+            f"LLM halluziniert nach {max_tries} Versuchen weiterhin: {last_invalid_reason}"
+        )
+
+    if last_error:
+        raise BuildOutfitError(
+            f"Outfit-Erstellung fehlgeschlagen nach {max_tries} Versuchen: {last_error}"
+        )
+
+    raise BuildOutfitError(f"Outfit-Erstellung fehlgeschlagen nach {max_tries} Versuchen (unbekannt).")
