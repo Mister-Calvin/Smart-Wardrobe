@@ -1,6 +1,7 @@
 import psycopg2
 import os
 from dotenv import load_dotenv
+import json
 
 load_dotenv()
 DB_KEY = os.getenv("POSTGRESQL_KEY_ONLY")
@@ -121,6 +122,10 @@ def filter_db_dynamic(
     ids = [row[0] for row in rows]
 
     conn.close()
+
+    with open("filtered_ids.json", "w", encoding="utf-8") as f:
+        json.dump(ids, f, ensure_ascii=False, indent=2)
+
     return ids
 
 
@@ -149,71 +154,64 @@ def _parse_int(s: str) -> int | None:
         return None
 
 
-def create_filter_input() -> dict:
-    """
-    Sammelt dynamischen Input und baut ein kwargs-dict für filter_db_dynamic(**kwargs).
-
-    WICHTIG: description_contains / text_any etc. werden hier wirklich gesetzt,
-    je nachdem was du eintippst.
-    """
+def build_filter_kwargs_from_strings(
+    colors_any: str = "",
+    colors_all: str = "",
+    score: str = "",
+    score_min: str = "",
+    score_max: str = "",
+    condition_any: str = "",
+    name_contains: str = "",
+    description_contains: str = "",
+    text_all: str = "",
+    text_any: str = "",
+    limit: str = "",
+) -> dict:
+    """Build kwargs for filter_db_dynamic(**kwargs) from raw form strings."""
     kwargs: dict = {}
 
-    input_colors_any = input("wähle Farbe oder Farben (OR) z.B. 'schwarz, blau' (leer = skip): ")
-    colors_any = _split_terms(input_colors_any)
-    if colors_any:
-        kwargs["colors_any"] = colors_any
+    ca = _split_terms(colors_any)
+    if ca:
+        kwargs["colors_any"] = ca
 
-    input_colors_all = input("wähle Farbkombinationen (AND) z.B. 'schwarz weiß' (leer = skip): ")
-    colors_all = _split_terms(input_colors_all)
-    if colors_all:
-        kwargs["colors_all"] = colors_all
+    cal = _split_terms(colors_all)
+    if cal:
+        kwargs["colors_all"] = cal
 
-    input_score = input("wähle einen festen score (z.B. 7) (leer = skip): ")
-    score = _parse_int(input_score)
-    if score is not None:
-        kwargs["score"] = score
+    sc = _parse_int(score)
+    if sc is not None:
+        kwargs["score"] = sc
 
-    input_score_min = input("wähle den min. Score (z.B. 6) (leer = skip): ")
-    score_min = _parse_int(input_score_min)
-    if score_min is not None:
-        kwargs["score_min"] = score_min
+    smin = _parse_int(score_min)
+    if smin is not None:
+        kwargs["score_min"] = smin
 
-    input_score_max = input("wähle den max. Score (z.B. 9) (leer = skip): ")
-    score_max = _parse_int(input_score_max)
-    if score_max is not None:
-        kwargs["score_max"] = score_max
+    smax = _parse_int(score_max)
+    if smax is not None:
+        kwargs["score_max"] = smax
 
-    input_condition_any = input("wähle den Zustand oder Zustände (OR) z.B. 'neu, gut' (leer = skip): ")
-    condition_any = _split_terms(input_condition_any)
-    if condition_any:
-        kwargs["condition_any"] = condition_any
+    cond = _split_terms(condition_any)
+    if cond:
+        kwargs["condition_any"] = cond
 
-    # ✅ deine gewählte Beschreibung wird als description_contains genutzt
-    input_name_contains = input("suche nach namen (AND, nur name) z.B. 'hoodie oversized' (leer = skip): ")
-    name_contains = _split_terms(input_name_contains)
-    if name_contains:
-        kwargs["name_contains"] = name_contains
+    nc = _split_terms(name_contains)
+    if nc:
+        kwargs["name_contains"] = nc
 
-    input_description_contains = input("suche nach beschreibungen (AND, nur description) z.B. 'baumwolle' (leer = skip): ")
-    description_contains = _split_terms(input_description_contains)
-    if description_contains:
-        kwargs["description_contains"] = description_contains
+    dc = _split_terms(description_contains)
+    if dc:
+        kwargs["description_contains"] = dc
 
-    input_text_all = input("jeder Term muss in name ODER description vorkommen (AND) z.B. 'hoodie wolle' (leer = skip): ")
-    text_all = _split_terms(input_text_all)
-    if text_all:
-        kwargs["text_all"] = text_all
+    ta = _split_terms(text_all)
+    if ta:
+        kwargs["text_all"] = ta
 
-    input_text_any = input("mindestens ein Term muss in name ODER description vorkommen (OR) z.B. 'hoodie, wolle' (leer = skip): ")
-    text_any = _split_terms(input_text_any)
-    if text_any:
-        kwargs["text_any"] = text_any
+    tany = _split_terms(text_any)
+    if tany:
+        kwargs["text_any"] = tany
 
-    input_limit = input("wähle ein Limit der Items (z.B. 20) (leer = skip): ")
-    limit = _parse_int(input_limit)
-    if limit is not None:
-        kwargs["limit"] = limit
+    lim = _parse_int(limit)
+    if lim is not None:
+        kwargs["limit"] = lim
 
     return kwargs
-
-
