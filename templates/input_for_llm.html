@@ -17,10 +17,46 @@
       <label>Event:</label><br>
       <select name="event_input">
         <option value="">-- wählen --</option>
-        <option value="Vorstellungsgespräch">Vorstellungsgespräch</option>
-        <option value="Date">Date</option>
-        <option value="Alltag">Alltag</option>
-        <option value="Feier">Feier</option>
+
+        <optgroup label="Arbeit / Büro">
+          <option value="arbeit">arbeit</option>
+          <option value="büro">büro</option>
+          <option value="office">office</option>
+          <option value="meeting">meeting</option>
+          <option value="termin">termin</option>
+          <option value="kunden">kunden</option>
+        </optgroup>
+
+        <optgroup label="Formal">
+          <option value="formal">formal</option>
+          <option value="hochzeit">hochzeit</option>
+          <option value="gala">gala</option>
+          <option value="anzug">anzug</option>
+          <option value="feierlich">feierlich</option>
+        </optgroup>
+
+        <optgroup label="Sport / Training">
+          <option value="gym">gym</option>
+          <option value="fitness">fitness</option>
+          <option value="training">training</option>
+          <option value="workout">workout</option>
+          <option value="laufen">laufen</option>
+          <option value="joggen">joggen</option>
+          <option value="sport">sport</option>
+        </optgroup>
+
+        <optgroup label="Date / Essen">
+          <option value="date">date</option>
+          <option value="dinner">dinner</option>
+          <option value="essen">essen</option>
+          <option value="restaurant">restaurant</option>
+        </optgroup>
+
+        <optgroup label="Sonstiges (deine bisherigen Werte)">
+          <option value="Vorstellungsgespräch">Vorstellungsgespräch</option>
+          <option value="Alltag">Alltag</option>
+          <option value="Feier">Feier</option>
+        </optgroup>
       </select>
     </p>
 
@@ -48,12 +84,81 @@
 
     <p>
       <label>Weather:</label><br>
-      <input type="text" name="weather_input" placeholder="z.B. kalt, Regen">
+      <select name="weather_input">
+        <option value="">-- wählen --</option>
+
+        <optgroup label="Regen">
+          <option value="regen">regen</option>
+          <option value="regnerisch">regnerisch</option>
+          <option value="nass">nass</option>
+          <option value="schauer">schauer</option>
+          <option value="sprühregen">sprühregen</option>
+        </optgroup>
+
+        <optgroup label="Kalt / Schnee / Frost">
+          <option value="kalt">kalt</option>
+          <option value="kühl">kühl</option>
+          <option value="frost">frost</option>
+          <option value="frostig">frostig</option>
+          <option value="schnee">schnee</option>
+          <option value="eisig">eisig</option>
+          <option value="frieren">frieren</option>
+        </optgroup>
+
+        <optgroup label="Warm / Hitze / Schwül">
+          <option value="warm">warm</option>
+          <option value="heiß">heiß</option>
+          <option value="hitze">hitze</option>
+          <option value="schwül">schwül</option>
+        </optgroup>
+
+        <optgroup label="Wind / Sturm">
+          <option value="wind">wind</option>
+          <option value="windig">windig</option>
+          <option value="sturm">sturm</option>
+          <option value="stürmisch">stürmisch</option>
+        </optgroup>
+      </select>
     </p>
 
     <p>
       <label>Mood:</label><br>
-      <input type="text" name="mood_input" placeholder="z.B. selbstbewusst, ruhig">
+      <select name="mood_input">
+        <option value="">-- wählen --</option>
+
+        <optgroup label="Gemütlich / entspannt">
+          <option value="gemütlich">gemütlich</option>
+          <option value="comfy">comfy</option>
+          <option value="entspannt">entspannt</option>
+          <option value="chillig">chillig</option>
+          <option value="cozy">cozy</option>
+          <option value="locker">locker</option>
+        </optgroup>
+
+        <optgroup label="Selbstbewusst / mutig">
+          <option value="selbstbewusst">selbstbewusst</option>
+          <option value="mutig">mutig</option>
+          <option value="bold">bold</option>
+          <option value="auffällig">auffällig</option>
+          <option value="statement">statement</option>
+        </optgroup>
+
+        <optgroup label="Minimalistisch / clean">
+          <option value="minimal">minimal</option>
+          <option value="minimalistisch">minimalistisch</option>
+          <option value="clean">clean</option>
+          <option value="schlicht">schlicht</option>
+          <option value="basic">basic</option>
+        </optgroup>
+
+        <optgroup label="Verspielt / fun">
+          <option value="verspielt">verspielt</option>
+          <option value="fun">fun</option>
+          <option value="bunt">bunt</option>
+          <option value="fröhlich">fröhlich</option>
+          <option value="spielerisch">spielerisch</option>
+        </optgroup>
+      </select>
     </p>
 
     <p>
