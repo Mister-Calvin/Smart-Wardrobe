@@ -2,6 +2,7 @@ import json
 from langchain_openai import OpenAIEmbeddings
 import os
 from dotenv import load_dotenv
+from json_manager import wirte_json
 
 
 
@@ -25,13 +26,18 @@ def input_to_vector(payload: dict) -> list[float]:
     question = payload.get("user_input", "")
     context = payload.get("context", {}) or {}
 
+
+    wirte_json("vector_payload",context)
+
+
     query_text = (
-        f"question: {question} - mit passenden schuhen, top und bottom\n"
+        f"question: {question}\n"
         f"event: {context.get('event_input')}\n"
         f"location: {context.get('location_input')}\n"
         f"season: {context.get('season_input')}\n"
         f"weather: {context.get('weather_input')}\n"
-        f"mood: {context.get('mood_input')}"
+        f"mood: {context.get('mood_input')}\n"
+        f"styling_hints: {context.get('styling_hints')}"
     )
 
     query_vec = emb.embed_query(query_text)  # -> list[float] (1536)
