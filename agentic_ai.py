@@ -20,7 +20,8 @@ from langgraph.graph import StateGraph, START, END
 from langgraph.types import interrupt, Command
 from langgraph.checkpoint.memory import InMemorySaver
 
-
+from json_manager import wirte_json
+import uuid
 # ----------------------------
 # 1) State definieren
 # ----------------------------
@@ -197,28 +198,34 @@ graph = builder.compile(checkpointer=memory)
 # ----------------------------
 # 4) CLI Runner (Human-in-the-loop)
 # ----------------------------
-def run_cli():
-    thread = {"configurable": {"thread_id": "outfit-thread-1"}}
-
-    result = graph.invoke({}, config=thread)
-
-    while "__interrupt__" in result:
-        intr = result["__interrupt__"][0]
-        payload = intr.value
-
-        print(f"\n[Fehlt: '{payload['field']}']")
-        user_answer = input(payload["question"] + "\n> ").strip()
-
-        result = graph.invoke(Command(resume=user_answer), config=thread)
-
-    state = graph.get_state(thread).values
-
-    # Ausgabe (Deutsch)
-    print("\n" + state["recommendation"])
-
-    # Optional: nur die "Probier:"-Hints (z.B. zum Einbau in similarity_search)
-    print("\nStyle-Hints:", state.get("style_hints", []))
 
 
-if __name__ == "__main__":
-    run_cli()
+def run_agent_from_payload(weather_input, event_input, mood_input, *, thread_id: str | None = None) -> OutfitState:
+    initial_state: OutfitState = {
+        "weather": weather_input or None,
+        "event_type": event_input or None,
+        "mood": mood_input or None,
+    }
+
+    for k in ["weather", "event_type", "mood"]:
+        if initial_state.get(k) is not None:
+            initial_state[k] = str(initial_state[k]).strip()  # type: ignore[assignment]
+
+    tid = thread_id or f"outfit-{uuid.uuid4().hex}"
+    thread = {"configurable": {"thread_id": tid}}
+
+    result = graph.invoke(initial_state, config=thread)
+
+    if "__interrupt__" in result:
+        state_now = graph.get_state(thread).values
+        missing = [k for k in REQUIRED_FIELDS if not state_now.get(k)]
+        return {
+            **state_now,
+            "recommendation": state_now.get("recommendation", ""),
+            "style_hints": state_now.get("style_hints", []),
+            "missing": missing,
+        }
+
+    return graph.get_state(thread).values
+
+
