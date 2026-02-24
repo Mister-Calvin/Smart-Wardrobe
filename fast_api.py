@@ -12,6 +12,8 @@ from fastapi import HTTPException
 from openai_model import NotEnoughItemsForOutfitError
 from fastapi.responses import JSONResponse
 from main import build_outfit, BuildOutfitError, HallucinationError
+from json_manager import load_json, wirte_json
+from agentic_ai import run_agent_from_payload
 
 
 
@@ -144,6 +146,14 @@ def get_input_and_built_answer(
 
         #liefert die tatsächlichen ids nach den Filtern - funktioniert also
 
+    #hier würde nun die ausfürhung von agentic_ai kommen:
+    payload_for_agentic = {
+        "weather": "kalt",
+        "event_type": "Büro",
+        "mood": "minimalistisch",
+    }
+    state = run_agent_from_payload(weather_input=weather_input, event_input=event_input, mood_input=mood_input)
+
 
     # 3) Payload wie gehabt + filtered_ids ergänzen
     payload = {
@@ -154,9 +164,10 @@ def get_input_and_built_answer(
             "season_input": season_input,
             "weather_input": weather_input,
             "mood_input": mood_input,
+            "styling_hints": state["style_hints"],
         }
     }
-
+    wirte_json(data_to_wirte=payload, filename="fastapi_payload")
     # 4) Pipeline starten
     answer_text = build_outfit(payload, filtered_ids)
 
