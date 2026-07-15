@@ -3,3 +3,5 @@ Ai.py
 wardrobe.db
 FastAPI.py
 
+__pycache__/
+*.py[cod]
