@@ -1,132 +1,269 @@
-import os
-from dotenv import load_dotenv
-from langchain_openai import OpenAIEmbeddings
-
+from ai_models.embedding_writer_router import (
+    normalize_embedding_provider,
+    upsert_item_embedding,
+)
 from models import Wardrobe, Session
 
-load_dotenv()
+class EmbeddingProviderNotConfiguredError(
+    RuntimeError
+):
+    pass
 
 
-class DataManager():
+class DataManager:
 
-    def __init__(self):
-        self._emb = OpenAIEmbeddings(model="text-embedding-3-small")
+    def __init__(
+        self,
+        embedding_provider: str | None = None,
+    ):
+        if embedding_provider is None:
+            self._embedding_provider = None
 
-    def _build_embedding_text(self, item: Wardrobe) -> str:
-        """Baut den Text, aus dem das Embedding berechnet wird."""
-        return (
-            f"name: {item.name}\n"
-            f"description: {item.description}\n"
-            f"color: {item.color}\n"
-            f"condition: {item.condition}\n"
-            f"type: {item.type}\n"
-            f"score: {item.score}"
-        )
+        else:
+            self._embedding_provider = (
+                normalize_embedding_provider(
+                    embedding_provider
+                )
+            )
 
-    def _compute_embedding(self, item: Wardrobe):
-        """Berechnet das Embedding (list[float]) für ein Wardrobe-Item."""
-        text_for_embedding = self._build_embedding_text(item)
-        return self._emb.embed_query(text_for_embedding)
+    def _require_embedding_provider(
+        self,
+    ) -> str:
+        if self._embedding_provider is None:
+            raise (
+                EmbeddingProviderNotConfiguredError(
+                    "Für Create oder Update "
+                    "muss ein Embedding-Provider "
+                    "angegeben werden."
+                )
+            )
+
+        return self._embedding_provider
 
     def get_all_items(self):
         session = Session()
+
         try:
-            return session.query(Wardrobe).all()
+            return session.query(
+                Wardrobe
+            ).all()
+
         finally:
             session.close()
 
-    def get_item_by_id(self, id):
+    def get_item_by_id(
+        self,
+        id,
+    ):
         session = Session()
+
         try:
-            return session.query(Wardrobe).filter(Wardrobe.id == id).first()
+            return (
+                session.query(Wardrobe)
+                .filter(Wardrobe.id == id)
+                .first()
+            )
+
         finally:
             session.close()
 
-    def get_items_by_ids(self, ids):
+    def get_items_by_ids(
+        self,
+        ids,
+    ):
         session = Session()
+
         try:
-            ids_list = list(ids) if ids is not None else []
+            ids_list = (
+                list(ids)
+                if ids is not None
+                else []
+            )
+
             if not ids_list:
                 return []
 
-            return session.query(Wardrobe).filter(Wardrobe.id.in_(ids_list)).all()
+            return (
+                session.query(Wardrobe)
+                .filter(
+                    Wardrobe.id.in_(
+                        ids_list
+                    )
+                )
+                .all()
+            )
+
         finally:
             session.close()
 
-    def create_item(self, name, description, color, condition, type, score):
-        session = Session()
-        new_item = Wardrobe(
-            name=name,
-            description=description,
-            color=color,
-            condition=condition,
-            type=type,
-            score=score,
+    def create_item(
+        self,
+        name,
+        description,
+        color,
+        condition,
+        type,
+        score,
+    ):
+        embedding_provider = (
+            self._require_embedding_provider()
         )
+        session = Session()
+
         try:
-            # Embedding direkt berechnen und speichern
-            new_item.embedding = self._compute_embedding(new_item)
+            new_item = Wardrobe(
+                name=name,
+                description=description,
+                color=color,
+                condition=condition,
+                type=type,
+                score=score,
+            )
 
             session.add(new_item)
+
+            # Erzeugt die ID, führt aber
+            # noch keinen Commit aus.
+            session.flush()
+
+            upsert_item_embedding(
+                session=session,
+                item=new_item,
+                provider=(
+                    embedding_provider
+                ),
+            )
+
             session.commit()
             return True
-        except Exception as e:
+
+        except Exception as error:
             session.rollback()
-            print(f"failed to create item:{e}")
+
+            print(
+                "failed to create item: "
+                f"{error}"
+            )
+
             return False
+
         finally:
             session.close()
 
-    def delete_item(self, id):
+    def delete_item(
+        self,
+        id,
+    ):
         session = Session()
+
         try:
-            item = session.query(Wardrobe).filter(Wardrobe.id == id).first()
-            if item:
-                session.delete(item)
-                session.commit()
-                return True
-            return False
-        except Exception as e:
+            item = (
+                session.query(Wardrobe)
+                .filter(Wardrobe.id == id)
+                .first()
+            )
+
+            if item is None:
+                return False
+
+            session.delete(item)
+            session.commit()
+
+            return True
+
+        except Exception as error:
             session.rollback()
-            print(f"failed to delete item:{e}")
+
+            print(
+                "failed to delete item: "
+                f"{error}"
+            )
+
             return False
+
         finally:
             session.close()
 
     def delete_all_items(self):
         session = Session()
+
         try:
-            session.query(Wardrobe).delete()
+            session.query(
+                Wardrobe
+            ).delete()
+
             session.commit()
             return True
-        except Exception as e:
+
+        except Exception as error:
             session.rollback()
-            print(f"failed to delete all items:{e}")
+
+            print(
+                "failed to delete all items: "
+                f"{error}"
+            )
+
             return False
+
         finally:
             session.close()
 
-    def update_item(self, id, name, description, color, condition, type, score):
+    def update_item(
+        self,
+        id,
+        name,
+        description,
+        color,
+        condition,
+        type,
+        score,
+    ):
+        embedding_provider = (
+            self._require_embedding_provider()
+        )
+
+
         session = Session()
+
         try:
-            item = session.query(Wardrobe).filter(Wardrobe.id == id).first()
-            if item:
-                item.name = name
-                item.description = description
-                item.color = color
-                item.condition = condition
-                item.type = type
-                item.score = score
+            item = (
+                session.query(Wardrobe)
+                .filter(Wardrobe.id == id)
+                .first()
+            )
 
+            if item is None:
+                return False
 
-                item.embedding = self._compute_embedding(item)
+            item.name = name
+            item.description = description
+            item.color = color
+            item.condition = condition
+            item.type = type
+            item.score = score
 
-                session.commit()
-                return True
-            return False
-        except Exception as e:
+            session.flush()
+
+            upsert_item_embedding(
+                session=session,
+                item=item,
+                provider=(
+                    embedding_provider
+                ),
+            )
+
+            session.commit()
+            return True
+
+        except Exception as error:
             session.rollback()
-            print(f"failed to update item:{e}")
+
+            print(
+                "failed to update item: "
+                f"{error}"
+            )
+
             return False
+
         finally:
             session.close()
