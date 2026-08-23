@@ -22,6 +22,13 @@ from langgraph.checkpoint.memory import InMemorySaver
 
 from json_manager import wirte_json
 import uuid
+from ai_models.shared.item_category_mapper import (
+    ItemCategory,
+)
+from ai_models.shared.retrieval_preferences import (
+    build_retrieval_preferences,
+)
+
 # ----------------------------
 # 1) State definieren
 # ----------------------------
@@ -31,6 +38,12 @@ class OutfitState(TypedDict, total=False):
     mood: Optional[str]             # Mood/Stil (Freitext)
     recommendation: str             # Finale Ausgabe (DE)
     style_hints: List[str]          # "Probier:"-Liste (DE) -> gut für Vector Query Expansion
+
+    priority_categories: List[ItemCategory]
+    category_limit_overrides: Dict[
+        ItemCategory,
+        int,
+    ]
 
 
 REQUIRED_FIELDS = ["weather", "event_type", "mood"]
@@ -78,6 +91,7 @@ def recommend_outfit(state: OutfitState) -> Dict[str, Any]:
     Output:
       - recommendation: schöner Text
       - style_hints: Liste der "Probier:"-Bulletpoints (gut für similarity_search / Query-Expansion)
+
     """
     weather = (state.get("weather") or "").lower()
     event = (state.get("event_type") or "").lower()
@@ -156,6 +170,14 @@ def recommend_outfit(state: OutfitState) -> Dict[str, Any]:
 
     style_hints = cleaned[:8]
 
+    retrieval_preferences = (
+        build_retrieval_preferences(
+            weather=weather,
+            event=event,
+            mood=mood,
+        )
+    )
+
     rec = (
         "Outfit-Idee für morgen:\n"
         f"- Wetter: {state.get('weather')}\n"
@@ -167,6 +189,16 @@ def recommend_outfit(state: OutfitState) -> Dict[str, Any]:
     return {
         "recommendation": rec,
         "style_hints": style_hints,
+        "priority_categories": (
+            retrieval_preferences[
+                "priority_categories"
+            ]
+        ),
+        "category_limit_overrides": (
+            retrieval_preferences[
+                "category_limit_overrides"
+            ]
+        ),
     }
 
 
@@ -217,15 +249,44 @@ def run_agent_from_payload(weather_input, event_input, mood_input, *, thread_id:
     result = graph.invoke(initial_state, config=thread)
 
     if "__interrupt__" in result:
-        state_now = graph.get_state(thread).values
-        missing = [k for k in REQUIRED_FIELDS if not state_now.get(k)]
+        state_now = graph.get_state(
+            thread
+        ).values
+
+        missing = [
+            key
+            for key in REQUIRED_FIELDS
+            if not state_now.get(key)
+        ]
+
         return {
             **state_now,
-            "recommendation": state_now.get("recommendation", ""),
-            "style_hints": state_now.get("style_hints", []),
+            "recommendation": (
+                state_now.get(
+                    "recommendation",
+                    "",
+                )
+            ),
+            "style_hints": (
+                state_now.get(
+                    "style_hints",
+                    [],
+                )
+            ),
+            "priority_categories": (
+                state_now.get(
+                    "priority_categories",
+                    [],
+                )
+            ),
+            "category_limit_overrides": (
+                state_now.get(
+                    "category_limit_overrides",
+                    {},
+                )
+            ),
             "missing": missing,
         }
-
     return graph.get_state(thread).values
 
 
