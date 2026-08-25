@@ -1,7 +1,34 @@
+# Secrets and local environment
 .env
-Ai.py
-wardrobe.db
-FastAPI.py
+.env.*
+!.env.example
+.venv/
 
+# IDE and operating system files
+.idea/
+.DS_Store
+
+# Python cache files
 __pycache__/
 *.py[cod]
+
+# Local database and obsolete local entry files
+wardrobe.db
+Ai.py
+FastAPI.py
+
+# Generated runtime and diagnostic data
+agentic_ai.json
+allowed_ids.json
+create_response_*.json
+fast_api_filter_ids.json
+fastapi_payload.json
+filtered_data.json
+filtered_ids.json
+items_for_llm.json
+llm_answer.json
+outfits.json
+similarity_search_data.json
+similarity_serach_filtered_ids.json
+test.json
+vector_payload.json
