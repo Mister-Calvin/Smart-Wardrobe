@@ -6,8 +6,18 @@ from pgvector.sqlalchemy import Vector
 
 load_dotenv()
 
-POSTGRESQL_KEY = os.getenv("POSTGRESQL_KEY")
-engine = create_engine(POSTGRESQL_KEY)
+DATABASE_URL = os.getenv(
+    "DATABASE_URL"
+)
+
+if not DATABASE_URL:
+    raise RuntimeError(
+        "DATABASE_URL fehlt in der .env."
+    )
+
+engine = create_engine(
+    DATABASE_URL
+)
 
 Base = declarative_base() #Grundlage, aus der SQLAlchemy später Tabellen erzeugt
 
