@@ -9,7 +9,6 @@ from json_manager import wirte_json
 # 1) API Key laden
 load_dotenv()
 api_key = os.getenv("OPENAI_API_KEY")
-DB_KEY = os.getenv("POSTGRESQL_KEY_ONLY")
 
 
 # 2) Embeddings Client
