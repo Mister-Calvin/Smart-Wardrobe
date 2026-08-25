@@ -7,6 +7,16 @@
 <body>
 
 <form action="/input" method="post">
+<p>
+   Aktives KI-Modell:
+  <strong>
+    {{ selected_ai_provider|upper }}
+  </strong>
+
+  <a href="/">
+    Modell wechseln
+  </a>
+</p>
   <input type="text" name="user_input" placeholder="Was soll ich anziehen?" required>
   <button type="submit">Absenden</button>
 
@@ -161,12 +171,6 @@
       </select>
     </p>
 
-    <p>
-      <label>
-        <input type="checkbox" name="complete_outfit" value="1">
-        Outfit vervollständigen (Top, Bottom & Schuhe sicherstellen)
-      </label>
-    </p>
 
   </details>
 
