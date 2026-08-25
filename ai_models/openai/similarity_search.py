@@ -8,7 +8,14 @@ import json
 
 
 load_dotenv()
-DB_KEY = os.getenv("POSTGRESQL_KEY_ONLY")
+DATABASE_URL = os.getenv(
+    "DATABASE_URL"
+)
+
+if not DATABASE_URL:
+    raise RuntimeError(
+        "DATABASE_URL fehlt in der .env."
+    )
 
 
 
@@ -24,8 +31,8 @@ def return_data_with_vector_similarity_search(
         return []
 
     conn = psycopg2.connect(
-        f"dbname=wardrobe user=postgres password={DB_KEY}"
-    )
+    DATABASE_URL
+)
     cur = conn.cursor()
 
     cur.execute(
