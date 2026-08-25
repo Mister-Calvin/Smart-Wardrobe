@@ -4,7 +4,14 @@ from dotenv import load_dotenv
 import json
 
 load_dotenv()
-DB_KEY = os.getenv("POSTGRESQL_KEY_ONLY")
+DATABASE_URL = os.getenv(
+    "DATABASE_URL"
+)
+
+if not DATABASE_URL:
+    raise RuntimeError(
+        "DATABASE_URL fehlt in der .env."
+    )
 
 
 def norm_terms(values):
@@ -32,7 +39,9 @@ def filter_db_dynamic(
     text_any: list[str] | None = None,      # OR: mindestens ein Term muss in name ODER description vorkommen
     limit: int | None = None,
 ):
-    conn = psycopg2.connect(f"dbname=wardrobe user=postgres password={DB_KEY}")
+    conn = psycopg2.connect(
+    DATABASE_URL
+)
     cur = conn.cursor()
 
     clauses = []
