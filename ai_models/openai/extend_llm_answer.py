@@ -1,12 +1,13 @@
-from data_manager import DataManager
-import json
+"""Render OpenAI outfit slots with wardrobe item names."""
 
-#with open("llm_answer.json", "r", encoding="utf-8") as f:
- #   result = json.load(f)
+from data_manager import DataManager
+
+
+
 
 data_manager = DataManager()
 
-# Alle Outfits durchgehen und Slots als Namen ausgeben (nur wenn befüllt)
+
 slot_labels = {
     "top_id": "Top",
     "bottom_id": "Bottom",
@@ -18,6 +19,7 @@ slot_labels = {
     "accessory_id": "Accessory",
 }
 def build_extended_answer_text(result) -> str:
+    """Resolve outfit IDs and format the outfits as readable text."""
     lines: list[str] = []
 
     for idx, outfit in enumerate(result["outfits"], start=1):
@@ -40,8 +42,6 @@ def build_extended_answer_text(result) -> str:
 
             lines.append(f"{label}: {item.name}")
 
-        lines.append("")  # Leerzeile zwischen Outfits
+        lines.append("")
 
     return "\n".join(lines).strip()
-
-#print(build_extended_answer_text())
