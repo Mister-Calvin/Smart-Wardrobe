@@ -1,10 +1,12 @@
 """Create OpenAI query embeddings for wardrobe similarity searches."""
 
-from dotenv import load_dotenv
 from langchain_openai import OpenAIEmbeddings
+import os
+from dotenv import load_dotenv
 
 
 load_dotenv()
+api_key = os.getenv("OPENAI_API_KEY")
 
 emb = OpenAIEmbeddings(model="text-embedding-3-small")
 
@@ -32,4 +34,5 @@ def input_to_vector(payload: dict) -> list[float]:
         f"styling_hints: {context.get('styling_hints')}"
     )
 
-    return emb.embed_query(query_text)
+    query_vec = emb.embed_query(query_text)
+    return query_vec
