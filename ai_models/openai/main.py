@@ -18,7 +18,7 @@ class HallucinationError(BuildOutfitError):
 
 
 def build_outfit(payload, filtered_ids=None, max_tries=3):
-    """Retry OpenAI generation and render the first accepted outfit response."""
+    """Retry OpenAI generation and render the first valid response."""
     last_error = None
     last_invalid_reason = None
 
