@@ -1,3 +1,5 @@
+"""Generate structured outfit suggestions with Gemini."""
+
 import json
 
 from pydantic import ValidationError
@@ -19,6 +21,7 @@ def generate_outfits_with_gemini(
     candidates: dict[str, dict],
     allowed_ids: list[int],
 ) -> OutfitSuggestions:
+    """Request three structured outfits from the supplied wardrobe candidates."""
     if not isinstance(input_data, dict):
         raise TypeError(
             "input_data muss ein Dictionary sein."
