@@ -51,9 +51,6 @@ def filter_db_dynamic(
     params = []
 
 
-
-
-
     color_tokens_sql = "regexp_split_to_array(replace(lower(color), '-', ' '), '[,\\s]+')"
 
 
@@ -75,7 +72,6 @@ def filter_db_dynamic(
     if score is not None:
         clauses.append("score = %s")
         params.append(int(score))
-
 
 
     for term in norm_terms(name_contains):
