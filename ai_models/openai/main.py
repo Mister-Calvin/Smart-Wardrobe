@@ -1,3 +1,5 @@
+"""Coordinate OpenAI outfit generation, retries, and answer rendering."""
+
 from ai_models.openai.openai_model import (
     NotEnoughItemsForOutfitError,
     create_answer,
@@ -16,6 +18,7 @@ class HallucinationError(BuildOutfitError):
 
 
 def build_outfit(payload, filtered_ids=None, max_tries=3):
+    """Retry OpenAI generation and render the first accepted outfit response."""
     last_error = None
     last_invalid_reason = None
 
@@ -26,11 +29,11 @@ def build_outfit(payload, filtered_ids=None, max_tries=3):
             else:
                 llm_answer = create_answer(create_response(payload, filtered_ids))
 
-        # diese Domain-Exception soll durchgehen zu FastAPI
+
         except NotEnoughItemsForOutfitError:
             raise
 
-        # alles andere: retry
+
         except Exception as e:
             last_error = f"Attempt {attempt}: {type(e).__name__}: {e}"
             continue
@@ -46,7 +49,7 @@ def build_outfit(payload, filtered_ids=None, max_tries=3):
             f"hallucinated_ids={hallucinated}"
         )
 
-    # NACH max_tries: hier müssen Exceptions hochgeworfen werden
+
     if last_invalid_reason:
         raise HallucinationError(
             f"LLM halluziniert nach {max_tries} Versuchen weiterhin: {last_invalid_reason}"
