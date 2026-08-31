@@ -1,4 +1,4 @@
-"""Build rule-based outfit guidance and retrieval preferences with LangGraph."""
+"""Build rule-based outfit guidance and retrieval preferences."""
 
 from typing_extensions import TypedDict, Optional, List, Literal, Dict, Any
 
@@ -13,8 +13,6 @@ from ai_models.shared.item_category_mapper import (
 from ai_models.shared.retrieval_preferences import (
     build_retrieval_preferences,
 )
-
-
 
 
 class OutfitState(TypedDict, total=False):
@@ -33,9 +31,6 @@ class OutfitState(TypedDict, total=False):
 
 
 REQUIRED_FIELDS = ["weather", "event_type", "mood"]
-
-
-
 
 
 def route_missing(state: OutfitState) -> Literal["ask", "recommend"]:
@@ -64,15 +59,12 @@ def ask_for_one_missing(state: OutfitState) -> Dict[str, Any]:
 
 
 def recommend_outfit(state: OutfitState) -> Dict[str, Any]:
-    """Build German styling hints and retrieval preferences from graph state."""
+    """Build German styling hints and retrieval preferences."""
     weather = (state.get("weather") or "").lower()
     event = (state.get("event_type") or "").lower()
     mood = (state.get("mood") or "").lower()
 
     pieces: List[str] = []
-
-
-
 
 
     if any(w in weather for w in ["regen", "regnerisch", "nass", "schauer", "sprühregen"]):
@@ -89,9 +81,6 @@ def recommend_outfit(state: OutfitState) -> Dict[str, Any]:
 
     if any(w in weather for w in ["wind", "windig", "sturm", "stürmisch"]):
         pieces += ["eine winddichte Schicht (Windbreaker/leichte Jacke)"]
-
-
-
 
 
     if any(e in event for e in ["arbeit", "büro", "office", "meeting", "termin", "kunden"]):
@@ -112,9 +101,6 @@ def recommend_outfit(state: OutfitState) -> Dict[str, Any]:
 
     else:
         pieces += ["ein entspannter Casual-Look mit passenden schuhen, top und bottom"]
-
-
-
 
 
     if any(m in mood for m in ["gemütlich", "comfy", "entspannt", "chillig", "cozy", "locker"]):
@@ -174,9 +160,6 @@ def recommend_outfit(state: OutfitState) -> Dict[str, Any]:
     }
 
 
-
-
-
 builder = StateGraph(OutfitState)
 
 builder.add_node("ask", ask_for_one_missing)
@@ -197,11 +180,6 @@ builder.add_edge("recommend", END)
 
 memory = InMemorySaver()
 graph = builder.compile(checkpointer=memory)
-
-
-
-
-
 
 
 def run_agent_from_payload(weather_input, event_input, mood_input, *, thread_id: str | None = None) -> OutfitState:
