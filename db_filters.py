@@ -139,7 +139,7 @@ def filter_db_dynamic(
 
 
 def _split_terms(s: str) -> list[str]:
-    """Split input like 'schwarz, blau' or 'schwarz blau' into lowercase tokens."""
+    """Split comma- or space-separated input into lowercase terms."""
     if not s:
         return []
     s = s.strip()
