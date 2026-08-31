@@ -1,9 +1,12 @@
+"""Define structured schemas for Gemini outfit responses."""
+
 from pydantic import BaseModel, Field
 
 
 class OutfitSlots(BaseModel):
-    # Bei einem Kleid enthält top_id die ID des Kleides.
-    # bottom_id bleibt dann leer.
+
+
+    """Define the required and optional wardrobe ID slots for one outfit."""
     top_id: int
     bottom_id: int | None = None
     shoes_id: int
@@ -16,6 +19,7 @@ class OutfitSlots(BaseModel):
 
 
 class OutfitSuggestion(BaseModel):
+    """Represent one outfit suggestion and its wardrobe slots."""
     name: str
     how_to_wear: str
     rationale: str
@@ -23,6 +27,7 @@ class OutfitSuggestion(BaseModel):
 
 
 class OutfitSuggestions(BaseModel):
+    """Require a response containing exactly three outfit suggestions."""
     outfits: list[OutfitSuggestion] = Field(
         min_length=3,
         max_length=3,
