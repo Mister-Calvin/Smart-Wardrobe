@@ -1,3 +1,5 @@
+"""Build outfit request text and Gemini query embeddings."""
+
 from google.genai import types
 
 from ai_models.gemini.gemini_client import (
@@ -8,6 +10,7 @@ from ai_models.gemini.gemini_client import (
 
 
 def build_query_text(payload: dict) -> str:
+    """Convert an outfit request and context into retrieval text."""
     if not isinstance(payload, dict):
         raise TypeError("payload muss ein Dictionary sein.")
 
@@ -44,6 +47,7 @@ def build_query_text(payload: dict) -> str:
 
 
 def input_to_vector(payload: dict) -> list[float]:
+    """Generate and validate a Gemini embedding for an outfit request."""
     query_text = build_query_text(payload)
     client = get_gemini_client()
 
