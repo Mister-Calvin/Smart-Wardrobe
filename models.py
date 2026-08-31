@@ -59,9 +59,6 @@ Session = sessionmaker(bind=engine, autoflush=False)
 session = Session()
 
 
-
-
-
 def clear_wardrobe():
     """Delete all wardrobe records and commit the change."""
     session.query(Wardrobe).delete()
@@ -173,8 +170,6 @@ def create_item():
     session.commit()
 
 
-
-
 def create_item_colorful_50():
     """Insert the colorful demonstration wardrobe collection."""
     items = (
@@ -241,7 +236,6 @@ def create_item_colorful_50():
 
     session.add_all(items)
     session.commit()
-
 
 
 def create_item_weather_50():
