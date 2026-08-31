@@ -1,3 +1,5 @@
+"""Normalize wardrobe types into shared outfit categories."""
+
 from typing import Literal, TypeAlias
 
 
@@ -131,6 +133,7 @@ SPORT_OUTERWEAR_WORDS = {
 
 
 def normalize_text(value: object) -> str:
+    """Convert a value to stripped case-insensitive text."""
     return str(value or "").strip().casefold()
 
 
@@ -138,6 +141,7 @@ def contains_any(
     text: str,
     words: set[str],
 ) -> bool:
+    """Return whether any supplied word occurs in the text."""
     return any(
         word in text
         for word in words
@@ -149,6 +153,7 @@ def classify_item_category(
     item_name: object = "",
     description: object = "",
 ) -> ItemCategory | None:
+    """Classify an item from its type, name, and description."""
     normalized_type = normalize_text(item_type)
 
     searchable_text = " ".join(
@@ -160,8 +165,8 @@ def classify_item_category(
         if part
     )
 
-    # Alte Daten verwenden "accessoire" teilweise auch
-    # für Mützen, Taschen und ähnliche Unterkategorien.
+
+
     if normalized_type in {
         "accessory",
         "accessoire",
@@ -186,8 +191,8 @@ def classify_item_category(
 
         return "accessory"
 
-    # Der alte Typ "unterwäsche" enthält sowohl
-    # Socken als auch nicht outfitrelevante Teile.
+
+
     if normalized_type in {
         "unterwäsche",
         "unterwaesche",
@@ -201,7 +206,7 @@ def classify_item_category(
 
         return None
 
-    # "sport" ist kein eindeutiger Outfit-Slot.
+
     if normalized_type == "sport":
         if contains_any(
             searchable_text,
@@ -239,6 +244,7 @@ def classify_item_category(
 def get_item_category(
     item: dict,
 ) -> ItemCategory | None:
+    """Return the normalized category for a wardrobe item."""
     if not isinstance(item, dict):
         raise TypeError(
             "item muss ein Dictionary sein."
