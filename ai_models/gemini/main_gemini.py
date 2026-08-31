@@ -1,3 +1,5 @@
+"""Expose the public entry point for Gemini outfit generation."""
+
 from ai_models.gemini.outfit_pipeline_gemini import (
     create_gemini_outfit_result,
 )
@@ -15,6 +17,7 @@ def build_outfit_with_gemini(
     retrieval_limit: int = 100,
     candidate_limit: int = 20,
 ) -> str:
+    """Run the Gemini pipeline and return its readable German response."""
     result = create_gemini_outfit_result(
         input_data=payload,
         filtered_ids=filtered_ids,
