@@ -280,7 +280,6 @@ Deleting a wardrobe item also deletes its Gemini embedding through `ON DELETE CA
 ├── data_manager.py
 ├── db_filters.py
 ├── fast_api.py
-├── json_manager.py
 ├── models.py
 ├── requirements.txt
 └── .env.example
@@ -570,17 +569,6 @@ The backfill commands create only missing embeddings. They do not automatically 
 
 If both providers must remain fully synchronized, the item currently has to be updated once with each provider or a dedicated cross-provider refresh command must be added.
 
-## Development diagnostics
-
-Some application paths write intermediate JSON diagnostics locally, including filtered IDs, provider payloads, vector-search results, and model responses.
-
-These files:
-
-- Are runtime development artifacts
-- Are ignored by Git
-- May contain user prompts or wardrobe information
-- Should not be committed to GitHub
-
 ## What this project demonstrates
 
 Smart Wardrobe demonstrates practical knowledge in:
@@ -624,7 +612,6 @@ Current limitations include:
 - External provider requests can fail because of quotas or rate limits
 - Hard filters can still leave too few suitable clothing categories
 - Session cookies are configured for local HTTP development
-- Runtime diagnostic JSON files are still generated locally
 
 ## Possible next steps
 
