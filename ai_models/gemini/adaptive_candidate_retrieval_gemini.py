@@ -71,7 +71,7 @@ def build_candidate_state(
     list[dict],
     CandidatePoolAnalysis,
 ]:
-    """Balance search results and analyze whether they can form enough outfits."""
+    """Balance search results and analyze outfit feasibility."""
     candidate_items = (
         build_balanced_candidate_pool(
             search_results=search_results,
@@ -107,7 +107,7 @@ def retrieve_adaptive_gemini_candidates(
         Iterable[ItemCategory] | None
     ) = None,
 ) -> AdaptiveCandidateRetrievalResult:
-    """Retrieve candidates and expand the search when the first pool is insufficient."""
+    """Retrieve candidates and expand an insufficient initial search."""
     retrieval_limit = (
         validate_positive_integer(
             retrieval_limit,
