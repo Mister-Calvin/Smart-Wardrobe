@@ -1,242 +1,641 @@
 # Smart Wardrobe
 
-Smart Wardrobe is an AI-powered wardrobe management system developed as a capstone project in Software Engineering and AI Engineering. The application combines a traditional web app for managing clothing items with a retrieval and LLM pipeline that creates specific outfit recommendations from the existing wardrobe.
+Smart Wardrobe is a local AI-powered wardrobe application that generates context-aware outfit suggestions using only clothing items that actually exist in the database.
 
-The project demonstrates not only CRUD functionality, but also the use of embeddings, vector search, structured LLM responses, guardrails against hallucinations, and a small agent logic for context-dependent styling guidance.
+The project combines a FastAPI CRUD application with provider-specific embeddings, PostgreSQL vector search, structured LLM responses, validation guardrails, and a rule-based LangGraph workflow.
+
+> **Status:** Functional local prototype and portfolio project.  
+> The Gemini workflow has been manually verified end to end. An isolated OpenAI workflow remains available as an optional compatibility path.
 
 ## Project idea
 
-Many outfit recommendation systems suggest generic clothing. Smart Wardrobe instead works with the user's actual clothing items. An outfit may only contain items that exist in the database.
+Generic fashion assistants can recommend clothing that the user does not own. Smart Wardrobe instead works with a real digital wardrobe stored in PostgreSQL.
 
-The user can:
+Users can:
 
-- Create, edit, delete, and view clothing items in the digital wardrobe
-- Enter outfit requests with context, e.g. occasion, weather, season, location, and mood
-- Filter the wardrobe before the AI selection, e.g. by color, score, condition, or text search
-- Receive AI-generated outfit recommendations based on semantically matching wardrobe items
+- Create, view, update, and delete wardrobe items
+- Select Gemini or OpenAI on the landing page
+- Enter an outfit request with event, location, season, weather, and mood
+- Restrict the wardrobe using structured filters
+- Receive three outfit suggestions assembled from real wardrobe IDs
+- See the selected IDs resolved back into readable clothing names
 
-## Core features
+The LLM never receives the complete database. It receives only a compact, preselected candidate pool to reduce token usage and limit hallucinations.
 
-- FastAPI web application with Jinja2 templates
-- Digital wardrobe UI with categories, item cards, and responsive styling
-- CRUD for clothing items, including automatic embedding updates on create and update
-- PostgreSQL data model with SQLAlchemy ORM
-- pgvector column for 1536-dimensional OpenAI embeddings
-- Embedding generation with `text-embedding-3-small`
-- Semantic similarity search via `embedding <-> query_vector`
-- Dynamic database filters for colors, score, condition, name, description, and free text
-- OpenAI Responses API with structured Pydantic output
-- Prompt and schema design for exactly three outfit recommendations
-- Validation of the LLM response against allowed item IDs
-- Retry mechanism for invalid or hallucinated LLM responses
-- LangGraph-based agent logic for weather, occasion, and mood guidance
-- JSON debug artifacts for pipeline traceability
+## Feature highlights
 
-## AI pipeline
+- FastAPI backend with Jinja2 templates
+- Responsive wardrobe interface
+- Complete CRUD flow for clothing items
+- Explicit Gemini or OpenAI provider selection
+- Signed browser session for the selected provider
+- No hidden default provider
+- PostgreSQL database with SQLAlchemy
+- pgvector-based semantic similarity search
+- Provider-specific item and query embeddings
+- Automatic embedding creation and updates for the selected provider
+- Transactional item and embedding writes
+- SQL filters applied before vector retrieval
+- Rule-based LangGraph styling hints
+- Provider-neutral retrieval preferences
+- Category-balanced Gemini candidate selection
+- Adaptive Gemini retrieval fallback
+- Token-reduced candidate payloads
+- Structured Pydantic model output
+- Authoritative `allowed_ids` validation
+- Category and outfit-slot validation
+- Dress and top/bottom structure validation
+- Validation of three unique outfit bases
+- Retry handling for invalid model output
+- Resolution of generated IDs back to wardrobe names
 
-Outfit generation is structured as a multi-stage pipeline:
+## Provider architecture
 
-1. The user sends an outfit request via `/input`.
-2. Context data such as weather, occasion, and mood is passed to a LangGraph state graph.
-3. The agent creates rule-based `style_hints`, e.g. waterproof shoes for rain or neutral colors for a minimalist style.
-4. Structured filters first reduce the possible database items.
-5. A query text is built from the user request, context, and `style_hints`.
-6. The query text is converted into a vector with OpenAI embeddings.
-7. PostgreSQL/pgvector searches the filtered candidate pool for the semantically most suitable clothing items.
-8. The LLM receives only these candidates plus an `allowed_ids` list.
-9. The OpenAI Responses API generates a typed response according to a Pydantic schema.
-10. The application checks whether all used IDs are actually contained in `allowed_ids`.
-11. If the response is valid, the IDs are resolved back into item names and rendered as an outfit recommendation.
+The provider is selected on the landing page and stored in the signed browser session as either `gemini` or `openai`.
+
+The same selected provider controls:
+
+1. Item embedding creation
+2. Item embedding updates
+3. Outfit-request embeddings
+4. Vector similarity search
+5. LLM outfit generation
+
+API keys are never stored in the browser session. They remain server-side in `.env`.
+
+```text
+Landing page
+    |
+    v
+POST /provider
+    |
+    v
+Signed session: "gemini" or "openai"
+    |
+    +---------------- CRUD request ----------------+
+    |                                               |
+    |                                               v
+    |                                         DataManager
+    |                                               |
+    |                                               v
+    |                                  Embedding writer router
+    |                                               |
+    |                              +----------------+----------------+
+    |                              |                                 |
+    |                              v                                 v
+    |                    Gemini embedding                   OpenAI embedding
+    |                              |                                 |
+    |                              v                                 v
+    |          wardrobe_gemini_embeddings              wardrobe.embedding
+    |
+    +--------------- Outfit request ----------------+
+                                                    |
+                                                    v
+                                           Provider router
+                                                    |
+                              +---------------------+--------------------+
+                              |                                          |
+                              v                                          v
+                       Gemini pipeline                             OpenAI pipeline
+```
+
+Gemini and OpenAI vectors are deliberately stored separately. A Gemini query vector is never compared with an OpenAI item vector, or vice versa.
+
+## Provider comparison
+
+| Area | Gemini | OpenAI |
+| --- | --- | --- |
+| Current role | Primary verified workflow | Optional compatibility workflow |
+| Generation model | Configured through `GEMINI_GENERATION_MODEL` | `gpt-4o-mini` |
+| Embedding model | Configured through `GEMINI_EMBEDDING_MODEL` | `text-embedding-3-small` |
+| Vector dimensions | Configured through `GEMINI_EMBEDDING_DIMENSIONS` | 1536 |
+| Vector storage | `wardrobe_gemini_embeddings` | `wardrobe.embedding` |
+| Similarity retrieval | Balanced candidates with adaptive fallback | Existing top-30 similarity flow |
+| Candidate payload | ID, name, color, normalized category | ID, name, color, original type |
+| Validation | IDs, categories, slots, outfit structure, unique bases | Allowed-ID validation |
+| Retry behavior | Up to three invalid generations | Up to three invalid generations |
+
+The providers are intentionally isolated and do not currently have identical capabilities.
+
+Provider availability, model access, pricing, and free-tier quotas are controlled by the external API providers and may change.
+
+## Gemini outfit pipeline
+
+The primary Gemini flow uses the following stages:
+
+1. The browser sends an outfit request to `/input`.
+2. SQL filters create a hard list of permitted wardrobe IDs.
+3. A rule-based LangGraph workflow derives styling hints from weather, event, and mood.
+4. The workflow derives provider-neutral retrieval priorities.
+5. Internal retrieval controls are separated from the data sent to Gemini.
+6. One Gemini query embedding is generated.
+7. Similarity search joins wardrobe items only with matching Gemini embeddings.
+8. Results are categorized into tops, bottoms, dresses, shoes, outerwear, headwear, socks, bags, and accessories.
+9. Category-based round-robin selection creates a balanced candidate pool.
+10. The pool is checked for shoes and at least three viable outfit bases.
+11. If necessary, similarity search is expanded while preserving the original hard filters.
+12. At most 20 candidates are reduced to ID, name, color, and normalized category.
+13. Gemini receives the compact candidates and the authoritative `allowed_ids`.
+14. Pydantic requires exactly three structured outfits.
+15. The response is validated for allowed IDs, correct categories, valid slots, dress structure, and unique outfit bases.
+16. Invalid responses are retried up to three times.
+17. Valid IDs are resolved to wardrobe names in one database query.
+18. The readable outfit recommendations are rendered in the browser.
 
 Short form:
 
 ```text
-User Input
-  -> Context + LangGraph style_hints
-  -> SQL Filter
-  -> OpenAI Embedding
-  -> pgvector Similarity Search
-  -> Candidate Whitelist
-  -> Structured LLM Output
-  -> Hallucination Check
-  -> Rendered Outfit Answer
+User request
+    -> SQL filters
+    -> LangGraph styling and retrieval hints
+    -> Gemini query embedding
+    -> Gemini pgvector search
+    -> Balanced candidate retrieval
+    -> Adaptive fallback if required
+    -> Compact candidate whitelist
+    -> Structured Gemini output
+    -> ID, category, and structure validation
+    -> Retry when invalid
+    -> Resolve IDs to wardrobe names
+    -> Rendered answer
 ```
 
-## Guardrails against LLM hallucinations
+## Guardrails and token efficiency
 
-An important part of the project is that the LLM is not allowed to freely invent clothing. Several safeguards were implemented for this purpose:
+Smart Wardrobe does not allow the LLM to freely invent clothing.
 
-- The model receives only a reduced candidate list of real database items.
-- Each outfit must use only IDs from `allowed_ids`.
-- The response is parsed with Pydantic into a fixed JSON schema.
-- After the response, all used IDs are collected and validated against `allowed_ids`.
-- If IDs are hallucinated, generation is repeated up to three times.
-- If too few suitable items are available, a dedicated domain exception is raised.
+The Gemini flow uses several safeguards:
+
+- Only real database candidates are sent to the model.
+- The candidate payload excludes unnecessary database fields.
+- Every candidate has an authoritative database ID.
+- The model may only use IDs from `allowed_ids`.
+- Each ID must appear in a compatible outfit slot.
+- A dress cannot also have a separate bottom.
+- A normal top requires a bottom.
+- Three valid and unique base combinations are required.
+- The response must match a Pydantic schema.
+- Invalid responses are rejected and retried.
+- Item names are loaded from the database after validation.
+
+These checks reduce hallucinations, but they do not guarantee that every external model response will be valid.
 
 ## Data model
 
-The central table is `wardrobe`.
+### `wardrobe`
 
-| Field | Meaning |
+The central table stores clothing metadata and the optional OpenAI vector.
+
+| Field | Purpose |
 | --- | --- |
 | `id` | Primary key |
-| `name` | Name of the clothing item |
-| `description` | Description, material, cut, or distinctive features |
+| `name` | Clothing item name |
+| `description` | Material, cut, or other details |
 | `color` | Color or color combination |
-| `condition` | Condition, e.g. new, good, very good |
-| `type` | Category, e.g. hoodie, trousers, shoes, coat |
-| `score` | Personal rating or relevance |
-| `embedding` | pgvector embedding for semantic search |
+| `condition` | Current condition |
+| `type` | Original wardrobe category |
+| `score` | Personal rating |
+| `embedding` | Nullable 1536-dimensional OpenAI vector |
+
+### `wardrobe_gemini_embeddings`
+
+Gemini embeddings are stored in a dedicated table.
+
+| Field | Purpose |
+| --- | --- |
+| `id` | Primary key |
+| `wardrobe_id` | Foreign key to `wardrobe.id` |
+| `model` | Gemini embedding model |
+| `dimensions` | Vector dimensions |
+| `embedding` | Gemini vector |
+
+The combination of `wardrobe_id`, `model`, and `dimensions` is unique.
+
+Deleting a wardrobe item also deletes its Gemini embedding through `ON DELETE CASCADE`.
 
 ## Web routes
 
-| Route | Method | Purpose |
+| Method | Route | Purpose |
 | --- | --- | --- |
-| `/` | GET | Wardrobe view with all items |
-| `/json` | GET | Output of all wardrobe items as JSON |
-| `/items/create` | GET/POST | Create a clothing item |
-| `/items/{item_id}/edit` | GET/POST | Edit a clothing item |
-| `/items/{item_id}/delete` | POST | Delete a clothing item |
-| `/input` | GET/POST | Enter an outfit request, context, and filters |
+| `GET` | `/` | Display the wardrobe and provider selection |
+| `POST` | `/provider` | Store the selected provider in the session |
+| `GET` | `/json` | Return all wardrobe items as JSON |
+| `GET` | `/items/create` | Display the create-item form |
+| `POST` | `/items/create` | Create an item and its selected-provider embedding |
+| `GET` | `/items/{item_id}/edit` | Display the update form |
+| `POST` | `/items/{item_id}/edit` | Update the item and selected-provider embedding |
+| `POST` | `/items/{item_id}/delete` | Delete an item |
+| `GET` | `/input` | Display the outfit request form |
+| `POST` | `/input` | Filter items and run the selected AI pipeline |
 
 ## Project structure
 
 ```text
 .
-├── fast_api.py              # FastAPI app, routes, templates, error handlers
-├── models.py                # SQLAlchemy model, DB session, seed data
-├── data_manager.py          # CRUD logic and embedding updates for items
-├── db_filters.py            # Dynamic SQL filters for the candidate pool
-├── data_into_vector.py      # Query text -> OpenAI embedding
-├── similarity_search.py     # pgvector similarity search
-├── openai_model.py          # LLM call, Pydantic schema, allowed_ids validation
-├── main.py                  # Orchestration, retry logic, domain exceptions
-├── agentic_ai.py            # LangGraph state graph for style hints
-├── extend_llm_answer.py     # Resolve IDs into readable item names
-├── create_embedding_data.py # Batch generation of missing embeddings
-├── json_manager.py          # Helper functions for debug JSON
-├── templates/               # Jinja2 pages
-└── static/style.css         # Responsive wardrobe UI
+├── ai_models/
+│   ├── embedding_writer_router.py
+│   ├── provider_router.py
+│   ├── provider_session.py
+│   │
+│   ├── shared/
+│   │   ├── balanced_candidate_retrieval.py
+│   │   ├── candidate_pool_validation.py
+│   │   ├── item_category_mapper.py
+│   │   └── retrieval_preferences.py
+│   │
+│   ├── gemini/
+│   │   ├── gemini_client.py
+│   │   ├── gemini_embedding_model.py
+│   │   ├── item_embedding_gemini.py
+│   │   ├── item_embedding_writer_gemini.py
+│   │   ├── create_embedding_data_gemini.py
+│   │   ├── query_embedding_gemini.py
+│   │   ├── similarity_search_gemini.py
+│   │   ├── adaptive_candidate_retrieval_gemini.py
+│   │   ├── candidate_preparation_gemini.py
+│   │   ├── outfit_schema_gemini.py
+│   │   ├── outfit_prompt_gemini.py
+│   │   ├── outfit_generation_gemini.py
+│   │   ├── outfit_response_validation_gemini.py
+│   │   ├── outfit_retry_gemini.py
+│   │   ├── outfit_pipeline_gemini.py
+│   │   ├── outfit_answer_gemini.py
+│   │   └── main_gemini.py
+│   │
+│   └── openai/
+│       ├── data_into_vector.py
+│       ├── similarity_search.py
+│       ├── openai_model.py
+│       ├── extend_llm_answer.py
+│       ├── main.py
+│       ├── item_embedding_openai.py
+│       ├── item_embedding_writer_openai.py
+│       └── create_embedding_data.py
+│
+├── scripts/
+│   └── bootstrap_database.py
+├── templates/
+├── static/
+├── agentic_ai.py
+├── data_manager.py
+├── db_filters.py
+├── fast_api.py
+├── json_manager.py
+├── models.py
+├── requirements.txt
+└── .env.example
 ```
 
-Some JSON files in the repository are debug snapshots from the pipeline, e.g. filtered IDs, similarity search results, LLM payloads, and validated responses. They make the intermediate steps of the AI pipeline traceable.
+The Gemini implementation lives in `ai_models/gemini/`, while the OpenAI implementation lives in `ai_models/openai/`.
+
+The `shared` package contains provider-neutral retrieval logic. Provider-specific API calls, embeddings, searches, prompts, and response handling remain inside their own packages.
 
 ## Technology stack
 
-- Python
+- Python 3.13
 - FastAPI
+- Uvicorn
 - Jinja2
+- Starlette sessions
 - SQLAlchemy
 - PostgreSQL
 - pgvector
 - psycopg2
-- OpenAI API
+- Google Gen AI SDK
+- OpenAI SDK
 - LangChain OpenAI Embeddings
 - LangGraph
 - Pydantic
-- HTML/CSS
+- HTML and CSS
 
-## Setup
+## Local setup
 
-### 1. Create a virtual environment
+The documented quick start uses Gemini. OpenAI is optional.
+
+### Prerequisites
+
+The project was developed and tested locally with:
+
+- Python 3.13
+- PostgreSQL 16
+- The server-side PostgreSQL `vector` extension
+- A Gemini API key
+
+An OpenAI API key is required only when using the OpenAI provider.
+
+The Python package named `pgvector` does not install the PostgreSQL server extension. The extension must also be installed for the PostgreSQL server.
+
+### 1. Clone the repository
 
 ```bash
-python -m venv .venv
+git clone https://github.com/Mister-Calvin/Smart-Wardrobe.git
+cd Smart-Wardrobe
+```
+
+### 2. Create and activate a virtual environment
+
+```bash
+python3.13 -m venv .venv
 source .venv/bin/activate
 ```
 
-### 2. Install dependencies
+### 3. Install dependencies
 
 ```bash
-pip install fastapi uvicorn jinja2 python-multipart sqlalchemy psycopg2-binary python-dotenv pgvector langchain-openai openai pydantic langgraph typing-extensions
+python -m pip install --upgrade pip
+python -m pip install -r requirements.txt
+python -m pip check
 ```
 
-### 3. Set environment variables
+### 4. Create the PostgreSQL database
 
-Create a `.env` file:
+For the default PostgreSQL user:
+
+```bash
+createdb -U postgres wardrobe
+```
+
+Alternatively:
+
+```bash
+psql -U postgres -c "CREATE DATABASE wardrobe;"
+```
+
+The local PostgreSQL username may be different. The username and database name must match the later `DATABASE_URL`.
+
+### 5. Configure the environment
+
+Create the local configuration file:
+
+```bash
+cp .env.example .env
+```
+
+Generate a random session secret:
+
+```bash
+openssl rand -hex 32
+```
+
+Open `.env` and configure the values:
 
 ```env
-OPENAI_API_KEY=your_openai_api_key
-POSTGRESQL_KEY=postgresql+psycopg2://postgres:your_password@localhost:5432/wardrobe
-POSTGRESQL_KEY_ONLY=your_password
+DATABASE_URL=postgresql://postgres:YOUR_PASSWORD@localhost:5432/wardrobe
+
+SESSION_SECRET=PASTE_YOUR_GENERATED_SESSION_SECRET_HERE
+
+GEMINI_API_KEY=YOUR_GEMINI_API_KEY
+GEMINI_GENERATION_MODEL=gemini-3.1-flash-lite
+GEMINI_EMBEDDING_MODEL=gemini-embedding-2
+GEMINI_EMBEDDING_DIMENSIONS=1536
+
+OPENAI_API_KEY=YOUR_OPENAI_API_KEY_IF_USED
 ```
 
-Note: The direct `psycopg2` helpers currently assume `dbname=wardrobe` and `user=postgres`. If a different database name or user is used, `db_filters.py` and `similarity_search.py` must be adjusted accordingly.
+Database URL format:
 
-### 4. Prepare the PostgreSQL database
+```text
+postgresql://USERNAME:PASSWORD@HOST:PORT/DATABASE
+```
+
+Characters such as `@`, `:`, `/`, or `#` inside a database password must be URL-encoded.
+
+The same `DATABASE_URL` is used by SQLAlchemy and the direct psycopg2 queries.
+
+Never commit `.env`. It contains local credentials and is excluded by `.gitignore`.
+
+### 6. Bootstrap the database schema
+
+Run:
 
 ```bash
-createdb wardrobe
-psql -d wardrobe -c "CREATE EXTENSION IF NOT EXISTS vector;"
+python -m scripts.bootstrap_database
 ```
 
-### 5. Create tables
+The bootstrap command:
+
+- Connects to the existing database from `DATABASE_URL`
+- Enables the `vector` extension if necessary
+- Registers the wardrobe and Gemini embedding models
+- Creates missing tables
+- Preserves existing wardrobe rows
+- Can be run repeatedly
+
+It does not:
+
+- Install PostgreSQL
+- Install the server-side pgvector extension
+- Create the database or database user
+- Insert seed data
+- Update existing columns like a migration system
+- Delete or overwrite wardrobe items
+
+The database user must have permission to enable the `vector` extension.
+
+### 7. Add optional demonstration data
+
+The outfit pipeline needs several different tops, bottoms or dresses, and shoes.
+
+For a fresh, empty database, the existing demonstration data can be inserted with:
 
 ```bash
-python -c "from models import Base, engine; Base.metadata.create_all(engine)"
+python - <<'PY'
+from models import (
+    create_item,
+    create_item_colorful_50,
+    create_item_weather_50,
+)
+
+create_item()
+create_item_colorful_50()
+create_item_weather_50()
+
+print("Demo wardrobe created.")
+PY
 ```
 
-### 6. Insert seed data
+Run this command only once on an empty database. The seed functions do not detect duplicate rows and do not create embeddings.
 
-Run only on an empty database:
+### 8. Generate missing Gemini embeddings
+
+For a rate-limit-friendly batch:
 
 ```bash
-python -c "from models import create_item, create_item_colorful_50, create_item_weather_50; create_item(); create_item_colorful_50(); create_item_weather_50()"
+python - <<'PY'
+from ai_models.gemini.create_embedding_data_gemini import (
+    create_missing_gemini_embeddings,
+)
+
+created = create_missing_gemini_embeddings(
+    limit=20
+)
+
+print("Created Gemini embeddings:", created)
+PY
 ```
 
-### 7. Generate embeddings
+Repeat the command until every item has a matching Gemini embedding.
+
+To process all currently missing items in one run, omit the limit:
 
 ```bash
-python -c "from create_embedding_data import create_embedding_column_and_seed_data; create_embedding_column_and_seed_data()"
+python - <<'PY'
+from ai_models.gemini.create_embedding_data_gemini import (
+    create_missing_gemini_embeddings,
+)
+
+created = create_missing_gemini_embeddings()
+
+print("Created Gemini embeddings:", created)
+PY
 ```
 
-### 8. Start the app
+Each completed embedding is committed separately. If an API quota or rate limit interrupts the process, wait according to the provider response and run the command again. Existing embeddings for the configured model and dimensions are skipped.
+
+### 9. Start the application
 
 ```bash
-uvicorn fast_api:app --reload
+python -m uvicorn fast_api:app --reload
 ```
 
-The app is then available at:
+Open:
 
 ```text
 http://127.0.0.1:8000
 ```
 
-## Example workflow
+Select Gemini on the landing page before opening the create, update, or outfit-request pages.
 
-1. Create a clothing item in the web frontend.
-2. When it is saved, an embedding is calculated automatically for this item.
-3. Enter a request under `/input`, e.g. "What can I wear to a meeting in the rain?"
-4. Optionally set filters, e.g. only black or highly rated clothing.
-5. The app searches the wardrobe for semantically matching items.
-6. The LLM creates three specific outfit recommendations from items that actually exist.
-7. The response is validated and displayed with readable item names.
+There is no automatically selected provider.
+
+## Manual Gemini smoke test
+
+A complete manual test can be performed as follows:
+
+1. Open `http://127.0.0.1:8000`.
+2. Select Gemini on the landing page.
+3. Confirm that the wardrobe items are displayed.
+4. Create a test item.
+5. Confirm that the new item appears in the wardrobe.
+6. Update its condition or score.
+7. Confirm that the update is displayed.
+8. Open the outfit request form.
+9. Enter event, location, season, weather, and mood.
+10. Use broad filters or leave the optional filters empty.
+11. Submit the request.
+12. Confirm that three readable outfits are returned.
+13. Delete the test item.
+14. Confirm that it and its Gemini embedding are removed.
+
+The current project uses manual integration and end-to-end checks. A committed automated test suite has not yet been added.
+
+## Optional OpenAI setup
+
+The OpenAI implementation remains available under `ai_models/openai/`.
+
+To use it:
+
+1. Add a valid `OPENAI_API_KEY` to `.env`.
+2. Generate missing OpenAI embeddings.
+3. Select OpenAI on the landing page.
+
+Generate missing OpenAI embeddings with:
+
+```bash
+python - <<'PY'
+from ai_models.openai.create_embedding_data import (
+    create_embedding_column_and_seed_data,
+)
+
+create_embedding_column_and_seed_data(
+    batch_size=50
+)
+PY
+```
+
+OpenAI embeddings are stored in `wardrobe.embedding`. They do not reuse Gemini vectors.
+
+## Important embedding behavior
+
+Creating or updating an item writes only the embedding belonging to the provider currently selected in the browser session.
+
+For example:
+
+- Creating an item with Gemini creates a Gemini embedding but no OpenAI embedding.
+- Creating an item with OpenAI creates an OpenAI embedding but no Gemini embedding.
+- Updating an item with Gemini refreshes only its Gemini embedding.
+- Updating an item with OpenAI refreshes only its OpenAI embedding.
+
+The backfill commands create only missing embeddings. They do not automatically refresh an existing embedding that became stale after the item was edited using the other provider.
+
+If both providers must remain fully synchronized, the item currently has to be updated once with each provider or a dedicated cross-provider refresh command must be added.
+
+## Development diagnostics
+
+Some application paths write intermediate JSON diagnostics locally, including filtered IDs, provider payloads, vector-search results, and model responses.
+
+These files:
+
+- Are runtime development artifacts
+- Are ignored by Git
+- May contain user prompts or wardrobe information
+- Should not be committed to GitHub
 
 ## What this project demonstrates
 
-This project demonstrates practical skills in several areas:
+Smart Wardrobe demonstrates practical knowledge in:
 
-- Backend development with FastAPI, routing, form processing, and error handling
-- Data modeling with SQLAlchemy and PostgreSQL
-- CRUD architecture with a clean separation between the web layer and data access
-- AI engineering with embeddings, vector search, and LLM orchestration
-- Retrieval-augmented generation on custom data
-- Prompt engineering and structured model responses
-- Pydantic schemas for validatable AI outputs
-- Guardrails to reduce hallucinations
-- Agentic AI fundamentals with LangGraph state management
-- Debugging and traceability through stored pipeline artifacts
-- Frontend fundamentals with Jinja2, HTML, and responsive CSS
+- Backend development with FastAPI
+- Server-side HTML rendering with Jinja2
+- Form handling and HTTP routing
+- SQLAlchemy data modeling and transactions
+- PostgreSQL and pgvector
+- Dynamic SQL filtering
+- Embedding generation and vector similarity search
+- Retrieval-augmented LLM workflows
+- Multi-provider software architecture
+- Provider routing and dependency isolation
+- Token-conscious model input design
+- Pydantic structured responses
+- LLM output validation and retry strategies
+- Hallucination reduction through candidate whitelists
+- Category-aware retrieval
+- Rule-based LangGraph state workflows
+- Signed browser sessions
+- Secure environment configuration
+- Reproducible local project setup
+- Git-based incremental refactoring
 
-## Project status
+## Current limitations
 
-Smart Wardrobe is a functional prototype for a capstone project. The core idea has been implemented: The user manages real clothing items, and the AI creates context-aware, validated outfit recommendations from them.
+Smart Wardrobe is a local prototype and is not production-ready.
 
-Possible next stages:
+Current limitations include:
 
-- Authentication and user-specific wardrobes
-- Upload of clothing images and vision-based attribute recognition
-- Tests for filter logic, LLM validation, and API routes
-- Deployment with Docker
-- UI improvements for the outfit input and response page
-- Persistent chat functionality for iteratively adjusting outfits
+- No authentication or user-specific wardrobes
+- All browser sessions use the same database wardrobe
+- No automated test suite or CI pipeline
+- No Alembic database migrations
+- No Docker or deployment configuration
+- No clothing image upload or computer-vision analysis
+- No persistent chat workflow
+- OpenAI does not yet have every Gemini retrieval and validation feature
+- Only the selected provider embedding is updated during create or edit
+- External provider requests can fail because of quotas or rate limits
+- Hard filters can still leave too few suitable clothing categories
+- Session cookies are configured for local HTTP development
+- Runtime diagnostic JSON files are still generated locally
+
+## Possible next steps
+
+- Add unit and integration tests
+- Add route tests with a temporary test database
+- Add Alembic migrations
+- Add authentication and per-user wardrobes
+- Add a command for refreshing both embedding providers
+- Improve provider-specific error handling for rate limits
+- Add clothing image upload and vision-based attribute extraction
+- Add Docker and deployment configuration
+- Add screenshots and a short demo video
+- Add continuous integration
+- Complete or remove the unfinished chat prototype
