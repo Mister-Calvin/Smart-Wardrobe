@@ -4,6 +4,7 @@
 !.env.example
 .venv/
 
+
 # IDE and operating system files
 .idea/
 .DS_Store
@@ -16,6 +17,7 @@ __pycache__/
 wardrobe.db
 Ai.py
 FastAPI.py
+
 
 # Generated runtime and diagnostic data
 agentic_ai.json
@@ -32,3 +34,12 @@ similarity_search_data.json
 similarity_serach_filtered_ids.json
 test.json
 vector_payload.json
+
+
+# Local Python experiments
+/ai_models/gemini/candidate_validation_gemini.py
+/db_methods.py
+/openai_model2.py
+/openai_model3.py
+/openai_models.py
+/validate_llm_output.py
