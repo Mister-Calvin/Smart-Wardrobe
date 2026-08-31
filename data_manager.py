@@ -114,7 +114,7 @@ class DataManager:
         type,
         score,
     ):
-        """Create an item and its provider-specific embedding in one transaction."""
+        """Create an item and its embedding in one transaction."""
         embedding_provider = (
             self._require_embedding_provider()
         )
