@@ -111,7 +111,6 @@ def build_retrieval_preferences(
         prioritize("socks")
 
 
-
     if contains_any(
         normalized_weather,
         {
@@ -143,7 +142,6 @@ def build_retrieval_preferences(
         prioritize("outerwear")
 
 
-
     elif contains_any(
         normalized_event,
         {
@@ -160,7 +158,6 @@ def build_retrieval_preferences(
         prioritize("accessory")
 
 
-
     elif contains_any(
         normalized_event,
         {
@@ -172,7 +169,6 @@ def build_retrieval_preferences(
     ):
         prioritize("bag")
         prioritize("accessory")
-
 
 
     if contains_any(
