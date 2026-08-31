@@ -1,7 +1,8 @@
+"""Build and execute PostgreSQL wardrobe filters from form input."""
+
 import psycopg2
 import os
 from dotenv import load_dotenv
-import json
 
 load_dotenv()
 DATABASE_URL = os.getenv(
@@ -15,6 +16,7 @@ if not DATABASE_URL:
 
 
 def norm_terms(values):
+    """Normalize nonempty values to stripped lowercase strings."""
     if not values:
         return []
     out = []
@@ -27,18 +29,19 @@ def norm_terms(values):
     return out
 
 def filter_db_dynamic(
-    colors_any: list[str] | None = None,   # OR: mindestens eine Farbe enthalten
-    colors_all: list[str] | None = None,   # AND: alle Farben enthalten
-    score: int | None = None,              # exakt
+    colors_any: list[str] | None = None,
+    colors_all: list[str] | None = None,
+    score: int | None = None,
     score_min: int | None = None,
     score_max: int | None = None,
-    condition_any: list[str] | None = None,  # OR
-    name_contains: list[str] | None = None,  # AND (im name)
-    description_contains: list[str] | None = None,  # AND (in description)
-    text_all: list[str] | None = None,      # AND: jeder Term muss in name ODER description vorkommen
-    text_any: list[str] | None = None,      # OR: mindestens ein Term muss in name ODER description vorkommen
+    condition_any: list[str] | None = None,
+    name_contains: list[str] | None = None,
+    description_contains: list[str] | None = None,
+    text_all: list[str] | None = None,
+    text_any: list[str] | None = None,
     limit: int | None = None,
 ):
+    """Return IDs of wardrobe items matching the supplied filters."""
     conn = psycopg2.connect(
     DATABASE_URL
 )
@@ -49,47 +52,47 @@ def filter_db_dynamic(
 
 
 
-    # ---- Farben tokenisieren: lower + '-' -> ' ' + split on commas/whitespace
-    # Ergebnis ist text[] wie ['schwarz','weiß','orange']
+
+
     color_tokens_sql = "regexp_split_to_array(replace(lower(color), '-', ' '), '[,\\s]+')"
 
-    # OR-Farben: enthält mindestens eine der Farben
+
     if colors_any:
         clauses.append(f"{color_tokens_sql} && %s::text[]")
         params.append([c.strip().lower() for c in colors_any if c and c.strip()])
 
-    # AND-Farben: enthält alle Farben
+
     if colors_all:
         clauses.append(f"{color_tokens_sql} @> %s::text[]")
         params.append([c.strip().lower() for c in colors_all if c and c.strip()])
 
-    # Condition (OR, case-insensitive)
+
     if condition_any:
         clauses.append("lower(condition) = ANY(%s)")
         params.append([c.strip().lower() for c in condition_any if c and c.strip()])
 
-    # Score exakt (wichtig: is not None statt if score)
+
     if score is not None:
         clauses.append("score = %s")
         params.append(int(score))
 
-    # ---- Partial Search in name/description (case-insensitive)
-    # name_contains: alle angegebenen Begriffe müssen im Namen vorkommen (AND)
+
+
     for term in norm_terms(name_contains):
         clauses.append("lower(name) LIKE %s")
         params.append(f"%{term}%")
 
-    # description_contains: alle angegebenen Begriffe müssen in der Beschreibung vorkommen (AND)
+
     for term in norm_terms(description_contains):
         clauses.append("lower(description) LIKE %s")
         params.append(f"%{term}%")
 
-    # text_all: jeder Term muss in name ODER description vorkommen (AND über Terme)
+
     for term in norm_terms(text_all):
         clauses.append("(lower(name) LIKE %s OR lower(description) LIKE %s)")
         params.extend([f"%{term}%", f"%{term}%"])
 
-    # text_any: mindestens ein Term muss in name ODER description vorkommen (OR über Terme)
+
     any_terms = norm_terms(text_any)
     if any_terms:
         or_parts = []
@@ -100,7 +103,7 @@ def filter_db_dynamic(
             params.append(f"%{term}%")
         clauses.append("(" + " OR ".join(or_parts) + ")")
 
-    # Score Range
+
     if score_min is not None:
         clauses.append("score >= %s")
         params.append(int(score_min))
@@ -132,9 +135,6 @@ def filter_db_dynamic(
 
     conn.close()
 
-    with open("filtered_ids.json", "w", encoding="utf-8") as f:
-        json.dump(ids, f, ensure_ascii=False, indent=2)
-
     return ids
 
 
@@ -154,6 +154,7 @@ def _split_terms(s: str) -> list[str]:
 
 
 def _parse_int(s: str) -> int | None:
+    """Return an integer or None for empty and invalid input."""
     s = (s or "").strip()
     if not s:
         return None
