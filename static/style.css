@@ -1,9 +1,9 @@
-/* Smart Wardrobe – Real Closet Look */
+
 
 :root{
   --bg: #df924e;
 
-  /* wood tones */
+
   --wood-1: #7a4b2a;
   --wood-2: #5e371f;
   --wood-3: #3f2516;
@@ -51,7 +51,7 @@ a:hover{text-decoration:underline;text-decoration-color:rgba(255,255,255,.25)}
 .page-title h1{margin:0;font-size:34px;letter-spacing:-.02em}
 .page-title p{margin:6px 0 0;color:var(--muted);font-size:14px}
 
-/* Buttons */
+
 .btn{
   border: 1px solid var(--stroke);
   background: rgba(255,255,255,.08);
@@ -76,7 +76,7 @@ a:hover{text-decoration:underline;text-decoration-color:rgba(255,255,255,.25)}
 }
 .btn-ghost{background:rgba(255,255,255,.05);box-shadow:none}
 
-/* ===== Closet Frame ===== */
+
 .closet-wrap{
   position:relative;
   border-radius: 26px;
@@ -84,9 +84,9 @@ a:hover{text-decoration:underline;text-decoration-color:rgba(255,255,255,.25)}
   box-shadow: var(--shadow);
   border: 1px solid rgba(255,255,255,.10);
 
-  /* Wooden cabinet look */
+
   background:
-    /* subtle grain */
+
     repeating-linear-gradient(
       90deg,
       rgba(255,255,255,.05) 0px,
@@ -99,7 +99,7 @@ a:hover{text-decoration:underline;text-decoration-color:rgba(255,255,255,.25)}
   overflow:hidden;
 }
 
-/* “closet doors” hint on the sides */
+
 .closet-wrap::before,
 .closet-wrap::after{
   content:"";
@@ -116,7 +116,7 @@ a:hover{text-decoration:underline;text-decoration-color:rgba(255,255,255,.25)}
 .closet-wrap::before{left:0}
 .closet-wrap::after{right:0}
 
-/* door handles */
+
 .handle{
   position:absolute;
   top: 38px;
@@ -130,13 +130,13 @@ a:hover{text-decoration:underline;text-decoration-color:rgba(255,255,255,.25)}
 .handle.left{left: 26px}
 .handle.right{right: 26px}
 
-/* inner content spacing away from “doors” */
+
 .closet-inner{
   position:relative;
-  padding: 10px 58px 12px; /* keep clear of door panels */
+  padding: 10px 58px 12px;
 }
 
-/* ===== Hero with wardrobe picture ===== */
+
 .hero{
   display:flex;
   gap:16px;
@@ -164,7 +164,7 @@ a:hover{text-decoration:underline;text-decoration-color:rgba(255,255,255,.25)}
   overflow:hidden;
 }
 
-/* ===== Layout: sidebar + closet ===== */
+
 .wardrobe{
   display:grid;
   grid-template-columns: 280px 1fr;
@@ -207,7 +207,7 @@ a:hover{text-decoration:underline;text-decoration-color:rgba(255,255,255,.25)}
   background: rgba(0,0,0,.25);
 }
 
-/* ===== Shelves ===== */
+
 .closet{
   padding: 12px;
 }
@@ -220,7 +220,7 @@ a:hover{text-decoration:underline;text-decoration-color:rgba(255,255,255,.25)}
   overflow:hidden;
 }
 
-/* wood plank header = “shelf board” */
+
 .shelf-head{
   display:flex;
   align-items:center;
@@ -244,7 +244,7 @@ a:hover{text-decoration:underline;text-decoration-color:rgba(255,255,255,.25)}
   padding: 12px;
 }
 
-/* hanging rail */
+
 .rail{
   height: 10px;
   border-radius: 999px;
@@ -260,7 +260,7 @@ a:hover{text-decoration:underline;text-decoration-color:rgba(255,255,255,.25)}
   gap: 12px;
 }
 
-/* Item card as “clothing” */
+
 .item{
   border-radius: 16px;
   border: 1px solid rgba(255,255,255,.12);
@@ -308,7 +308,7 @@ a:hover{text-decoration:underline;text-decoration-color:rgba(255,255,255,.25)}
   background: rgba(0,0,0,.18);
 }
 
-/* Responsive */
+
 @media(max-width: 980px){
   .hero{flex-direction:column}
   .hero-art{width:100%}
