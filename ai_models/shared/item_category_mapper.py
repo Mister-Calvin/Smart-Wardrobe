@@ -166,7 +166,6 @@ def classify_item_category(
     )
 
 
-
     if normalized_type in {
         "accessory",
         "accessoire",
@@ -190,7 +189,6 @@ def classify_item_category(
             return "socks"
 
         return "accessory"
-
 
 
     if normalized_type in {
