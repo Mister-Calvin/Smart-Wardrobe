@@ -1,3 +1,5 @@
+"""Coordinate Gemini retrieval, generation, validation, and diagnostics."""
+
 from typing import cast
 
 from ai_models.gemini.query_embedding_gemini import (
@@ -29,6 +31,7 @@ def split_gemini_input_data(
     list[ItemCategory],
     dict[ItemCategory, int],
 ]:
+    """Separate model input from internal retrieval settings."""
     if not isinstance(input_data, dict):
         raise TypeError(
             "input_data muss ein Dictionary sein."
@@ -180,6 +183,7 @@ def create_gemini_outfit_result(
     retrieval_limit: int = 100,
     candidate_limit: int = 20,
 ) -> dict:
+    """Create a validated Gemini outfit result with adaptive retrieval."""
     (
         generation_input_data,
         priority_categories,
