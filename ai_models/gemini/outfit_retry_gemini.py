@@ -1,3 +1,5 @@
+"""Retry Gemini outfit generation until validation succeeds."""
+
 from ai_models.gemini.outfit_generation_gemini import (
     generate_outfits_with_gemini,
 )
@@ -7,6 +9,7 @@ from ai_models.gemini.outfit_response_validation_gemini import (
 
 
 class GeminiHallucinationError(RuntimeError):
+    """Indicate that Gemini exhausted its attempts without a valid response."""
     pass
 
 
@@ -16,6 +19,7 @@ def generate_valid_gemini_outfit_result(
     allowed_ids: list[int],
     max_tries: int = 3,
 ) -> dict:
+    """Generate and validate outfits until one attempt succeeds."""
     if max_tries <= 0:
         raise ValueError(
             "max_tries muss größer als 0 sein."
