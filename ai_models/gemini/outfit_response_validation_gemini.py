@@ -1,3 +1,5 @@
+"""Validate Gemini outfit IDs, categories, structure, and uniqueness."""
+
 from ai_models.gemini.outfit_schema_gemini import (
     OutfitSuggestions,
 )
@@ -46,6 +48,7 @@ def build_candidate_category_map(
     candidates: dict[str, dict],
     allowed_ids: list[int],
 ) -> dict[int, str]:
+    """Map each allowed candidate ID to its validated category."""
     if not isinstance(candidates, dict):
         raise TypeError(
             "candidates muss ein Dictionary sein."
@@ -105,6 +108,7 @@ def validate_gemini_outfit_ids(
     candidates: dict[str, dict],
     required_unique_bases: int = 3,
 ) -> dict:
+    """Validate generated outfit slots and collect their authoritative IDs."""
     if not isinstance(outfits, OutfitSuggestions):
         raise TypeError(
             "outfits muss ein "
