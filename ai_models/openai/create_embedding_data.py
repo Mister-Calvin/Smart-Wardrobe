@@ -18,7 +18,7 @@ session = Session()
 
 
 def create_embedding_column_and_seed_data(batch_size: int = 50):
-    """Erstellt fehlende Embeddings in Batches (Standard: 50)."""
+    """Create missing OpenAI embeddings in configurable batches."""
     try:
 
         session.execute(text("""
