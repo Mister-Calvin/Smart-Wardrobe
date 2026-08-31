@@ -20,7 +20,6 @@ from langgraph.graph import StateGraph, START, END
 from langgraph.types import interrupt, Command
 from langgraph.checkpoint.memory import InMemorySaver
 
-from json_manager import wirte_json
 import uuid
 from ai_models.shared.item_category_mapper import (
     ItemCategory,
@@ -29,15 +28,16 @@ from ai_models.shared.retrieval_preferences import (
     build_retrieval_preferences,
 )
 
-# ----------------------------
-# 1) State definieren
-# ----------------------------
+
+
+
 class OutfitState(TypedDict, total=False):
-    weather: Optional[str]          # Wetter (Freitext)
-    event_type: Optional[str]       # Anlass (Freitext)
-    mood: Optional[str]             # Mood/Stil (Freitext)
-    recommendation: str             # Finale Ausgabe (DE)
-    style_hints: List[str]          # "Probier:"-Liste (DE) -> gut für Vector Query Expansion
+    """Store input and generated outfit guidance in the graph state."""
+    weather: Optional[str]
+    event_type: Optional[str]
+    mood: Optional[str]
+    recommendation: str
+    style_hints: List[str]
 
     priority_categories: List[ItemCategory]
     category_limit_overrides: Dict[
@@ -49,9 +49,9 @@ class OutfitState(TypedDict, total=False):
 REQUIRED_FIELDS = ["weather", "event_type", "mood"]
 
 
-# ----------------------------
-# 2) Routing / Nodes
-# ----------------------------
+
+
+
 def route_missing(state: OutfitState) -> Literal["ask", "recommend"]:
     """
     Entscheidet, ob der Agent weiter nachfragen muss oder ob er schon
@@ -99,68 +99,68 @@ def recommend_outfit(state: OutfitState) -> Dict[str, Any]:
 
     pieces: List[str] = []
 
-    # ----------------------------
-    # Wetter-Regeln (DE Keywords)
-    # ----------------------------
-    # Regen
+
+
+
+
     if any(w in weather for w in ["regen", "regnerisch", "nass", "schauer", "sprühregen"]):
         pieces += ["eine wasserfeste Jacke", "wasserfeste/robuste Schuhe"]
 
-    # Kalt / Schnee / Frost
+
     if any(w in weather for w in ["kalt", "kühl", "frost", "frostig", "schnee", "eisig", "frieren"]):
         pieces += ["ein warmer Mantel", "eine Strickschicht (Pullover/Hoodie)", "dickere Socken"]
 
-    # Warm / Heiß / Schwül
+
     if any(w in weather for w in ["warm", "heiß", "hitze", "schwül"]):
         pieces += ["ein atmungsaktives Oberteil", "leichte Stoffe", "bequeme Sneaker oder Sandalen"]
 
-    # Wind
+
     if any(w in weather for w in ["wind", "windig", "sturm", "stürmisch"]):
         pieces += ["eine winddichte Schicht (Windbreaker/leichte Jacke)"]
 
-    # ----------------------------
-    # Anlass-Regeln (DE Keywords)
-    # ----------------------------
-    # Arbeit / Büro
+
+
+
+
     if any(e in event for e in ["arbeit", "büro", "office", "meeting", "termin", "kunden"]):
         pieces += ["smart-casual Hose", "sauberes Hemd oder strukturiertes Top"]
 
-    # Formal
+
     elif any(e in event for e in ["formal", "hochzeit", "gala", "anzug", "feierlich"]):
         pieces += ["ein schickes, gut sitzendes Outfit (Anzug/Kleid)", "elegante Schuhe"]
 
-    # Sport / Training
+
     elif any(e in event for e in ["gym", "fitness", "training", "workout", "laufen", "joggen", "sport"]):
         pieces += ["Sportkleidung", "Trainingsschuhe"]
 
-    # Date / Essen
+
     elif any(e in event for e in ["date", "dinner", "essen", "restaurant"]):
         pieces += ["ein ‘edles’ Teil (Jacke/Schuhe/Accessoire als Upgrade)"]
 
-    # Default
+
     else:
         pieces += ["ein entspannter Casual-Look mit passenden schuhen, top und bottom"]
 
-    # ----------------------------
-    # Mood/Stil-Regeln (DE Keywords)
-    # ----------------------------
-    # Gemütlich / entspannt
+
+
+
+
     if any(m in mood for m in ["gemütlich", "comfy", "entspannt", "chillig", "cozy", "locker"]):
         pieces += ["weiche Materialien", "etwas weiterer Schnitt"]
 
-    # Selbstbewusst / mutig
+
     if any(m in mood for m in ["selbstbewusst", "mutig", "bold", "auffällig", "statement"]):
         pieces += ["ein Statement-Piece (Farbe/Schnitt/Accessoire)"]
 
-    # Minimalistisch / clean
+
     if any(m in mood for m in ["minimal", "minimalistisch", "clean", "schlicht", "basic"]):
         pieces += ["neutrale Farben", "klare Silhouette"]
 
-    # Verspielt / fun
+
     if any(m in mood for m in ["verspielt", "fun", "bunt", "fröhlich", "spielerisch"]):
         pieces += ["ein Farbakzent", "ein verspieltes Accessoire"]
 
-    # Dedupe (Reihenfolge behalten)
+
     seen = set()
     cleaned: List[str] = []
     for p in pieces:
@@ -202,9 +202,9 @@ def recommend_outfit(state: OutfitState) -> Dict[str, Any]:
     }
 
 
-# ----------------------------
-# 3) Graph bauen
-# ----------------------------
+
+
+
 builder = StateGraph(OutfitState)
 
 builder.add_node("ask", ask_for_one_missing)
@@ -227,12 +227,13 @@ memory = InMemorySaver()
 graph = builder.compile(checkpointer=memory)
 
 
-# ----------------------------
-# 4) CLI Runner (Human-in-the-loop)
-# ----------------------------
+
+
+
 
 
 def run_agent_from_payload(weather_input, event_input, mood_input, *, thread_id: str | None = None) -> OutfitState:
+    """Run the outfit graph with form values and return its current state."""
     initial_state: OutfitState = {
         "weather": weather_input or None,
         "event_type": event_input or None,
@@ -241,7 +242,7 @@ def run_agent_from_payload(weather_input, event_input, mood_input, *, thread_id:
 
     for k in ["weather", "event_type", "mood"]:
         if initial_state.get(k) is not None:
-            initial_state[k] = str(initial_state[k]).strip()  # type: ignore[assignment]
+            initial_state[k] = str(initial_state[k]).strip()
 
     tid = thread_id or f"outfit-{uuid.uuid4().hex}"
     thread = {"configurable": {"thread_id": tid}}
@@ -288,5 +289,4 @@ def run_agent_from_payload(weather_input, event_input, mood_input, *, thread_id:
             "missing": missing,
         }
     return graph.get_state(thread).values
-
 
