@@ -133,7 +133,6 @@ class DataManager:
             session.add(new_item)
 
 
-
             session.flush()
 
             upsert_item_embedding(
