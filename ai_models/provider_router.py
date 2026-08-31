@@ -1,3 +1,5 @@
+"""Route outfit generation through Gemini or OpenAI."""
+
 AVAILABLE_AI_PROVIDERS = (
     "gemini",
     "openai",
@@ -5,6 +7,7 @@ AVAILABLE_AI_PROVIDERS = (
 
 
 class AIProviderError(Exception):
+    """Provide a base exception for shared AI provider failures."""
     pass
 
 
@@ -12,24 +15,29 @@ class UnknownAIProviderError(
     AIProviderError,
     ValueError,
 ):
+    """Indicate that an unsupported AI provider was requested."""
     pass
 
 
 class AIProviderRequestError(AIProviderError):
+    """Indicate that an AI provider request is invalid."""
     pass
 
 
 class AIProviderHallucinationError(AIProviderError):
+    """Indicate that generated outfits contain invalid item IDs."""
     pass
 
 
 class AIProviderGenerationError(AIProviderError):
+    """Indicate that outfit generation could not be completed."""
     pass
 
 
 def normalize_ai_provider(
     provider: str,
 ) -> str:
+    """Normalize and validate an AI provider name."""
     if not isinstance(provider, str):
         raise TypeError(
             "provider muss ein String sein."
@@ -54,6 +62,7 @@ def build_outfit_with_gemini_provider(
     payload: dict,
     filtered_ids: list[int] | None,
 ) -> str:
+    """Generate an outfit with Gemini and translate known provider errors."""
     from ai_models.gemini.main_gemini import (
         build_outfit_with_gemini,
     )
@@ -87,6 +96,7 @@ def build_outfit_with_openai_provider(
     payload: dict,
     filtered_ids: list[int] | None,
 ) -> str:
+    """Generate an outfit with OpenAI and translate known provider errors."""
     try:
         from ai_models.openai.main import (
             BuildOutfitError,
@@ -130,6 +140,7 @@ def build_outfit_with_provider(
     payload: dict,
     filtered_ids: list[int] | None = None,
 ) -> str:
+    """Send outfit generation to the selected AI provider."""
     normalized_provider = normalize_ai_provider(
         provider
     )
