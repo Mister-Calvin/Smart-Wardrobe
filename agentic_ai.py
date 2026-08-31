@@ -1,18 +1,4 @@
-"""
-Einfacher LangGraph-"Agent" für Outfit-Ideen (DE).
-
-Verhalten:
-- Benötigt: weather (Wetter), event_type (Anlass), mood (Stimmung/Stil)
-- Wenn etwas fehlt -> Interrupt mit einer Frage
-- Resume mit Command(resume=...) bis alles vorhanden ist
-- Dann erzeugt er eine Outfit-Idee (regelbasiert, ohne LLM)
-
-Installation:
-  pip install -U langgraph
-
-Start:
-  python agentic_ai.py
-"""
+"""Build rule-based outfit guidance and retrieval preferences with LangGraph."""
 
 from typing_extensions import TypedDict, Optional, List, Literal, Dict, Any
 
@@ -53,21 +39,13 @@ REQUIRED_FIELDS = ["weather", "event_type", "mood"]
 
 
 def route_missing(state: OutfitState) -> Literal["ask", "recommend"]:
-    """
-    Entscheidet, ob der Agent weiter nachfragen muss oder ob er schon
-    eine Empfehlung erstellen kann.
-
-    Wichtig: Router-Funktionen sollten den State NICHT mutieren.
-    """
+    """Route incomplete state to a question or a recommendation."""
     missing = [k for k in REQUIRED_FIELDS if not state.get(k)]
     return "ask" if missing else "recommend"
 
 
 def ask_for_one_missing(state: OutfitState) -> Dict[str, Any]:
-    """
-    Fragt genau EIN fehlendes Feld ab und pausiert per interrupt().
-    Die Antwort kommt beim Resume (Command(resume=...)) zurück.
-    """
+    """Ask for the first missing field and return the normalized answer."""
     missing = [k for k in REQUIRED_FIELDS if not state.get(k)]
     if not missing:
         return {}
@@ -86,13 +64,7 @@ def ask_for_one_missing(state: OutfitState) -> Dict[str, Any]:
 
 
 def recommend_outfit(state: OutfitState) -> Dict[str, Any]:
-    """
-    Regelbasierte Outfit-Idee (Deutsch).
-    Output:
-      - recommendation: schöner Text
-      - style_hints: Liste der "Probier:"-Bulletpoints (gut für similarity_search / Query-Expansion)
-
-    """
+    """Build German styling hints and retrieval preferences from graph state."""
     weather = (state.get("weather") or "").lower()
     event = (state.get("event_type") or "").lower()
     mood = (state.get("mood") or "").lower()
@@ -289,4 +261,3 @@ def run_agent_from_payload(weather_input, event_input, mood_input, *, thread_id:
             "missing": missing,
         }
     return graph.get_state(thread).values
-
