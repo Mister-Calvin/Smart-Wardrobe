@@ -1,9 +1,10 @@
+"""Retrieve wardrobe candidates with OpenAI vector similarity."""
+
 import psycopg2
 import os
 from dotenv import load_dotenv
 from db_filters import filter_db_dynamic
 from typing import Optional, Sequence
-import json
 
 
 
@@ -23,8 +24,9 @@ def return_data_with_vector_similarity_search(
     input_vector,
     filtered_ids: Optional[Sequence[int]] = None,
 ):
-    # If FastAPI already computed filtered IDs, use them.
-    # Otherwise fall back to a default DB filter.
+
+
+    """Return wardrobe rows ranked by OpenAI vector distance."""
     get_filtered_ids = list(filtered_ids) if filtered_ids else filter_db_dynamic()
 
     if not get_filtered_ids:
@@ -46,18 +48,13 @@ def return_data_with_vector_similarity_search(
         (get_filtered_ids, input_vector,)
     )
 
-    with open("similarity_serach_filtered_ids.json", "w", encoding="utf-8") as f:
-        json.dump(get_filtered_ids, f, ensure_ascii=False, indent=2)
-
     results = cur.fetchall()
     conn.close()
-
-    with open("similarity_search_data.json", "w", encoding="utf-8") as f:
-        json.dump(results, f, ensure_ascii=False, indent=2)
 
     return results
 
 def convert_selected_data_into_list_of_dictionary(results):
+    """Convert database rows into wardrobe item dictionaries."""
     items = []
     for (item_id, name, description, color, condition, item_type, score) in results:
         items.append(
@@ -75,6 +72,7 @@ def convert_selected_data_into_list_of_dictionary(results):
 
 
 def break_down_data_for_llm(items):
+    """Reduce wardrobe items to compact candidates and allowed IDs."""
     clothing_items = {}
     allowed_ids = []
     for i, item in enumerate(items, start=1):
@@ -85,11 +83,7 @@ def break_down_data_for_llm(items):
             "color": item["color"],
             "type": item["type"],
         }
-    with open("items_for_llm.json", "w", encoding="utf-8") as f:
-        json.dump(clothing_items, f, ensure_ascii=False, indent=2)
-
     return clothing_items, allowed_ids
-
 
 
 
