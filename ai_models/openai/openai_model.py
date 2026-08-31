@@ -1,3 +1,5 @@
+"""Define structured OpenAI outfit generation and validation."""
+
 import os
 from dotenv import load_dotenv
 from openai import OpenAI
@@ -19,6 +21,7 @@ API_KEY = os.getenv("OPENAI_API_KEY")
 client = OpenAI(api_key=API_KEY)
 
 class OutfitSlots(BaseModel):
+    """Describe required and optional wardrobe ID slots for one outfit."""
     top_id: int
     bottom_id: Optional [int] = None
     shoes_id: int
@@ -34,6 +37,7 @@ class OutfitSlots(BaseModel):
 
 
 class OutfitSuggestion(BaseModel):
+    """Describe one outfit with styling text and wardrobe slots."""
     name: str
     how_to_wear: str
     rationale: str
@@ -41,6 +45,7 @@ class OutfitSuggestion(BaseModel):
 
 
 class OutfitSuggestions(BaseModel):
+    """Contain outfit suggestions parsed from an OpenAI response."""
     outfits: List[OutfitSuggestion]
 
 
@@ -60,16 +65,17 @@ HARTE REGELN:
 """
 
 def has_minimum_items(candidates: dict) -> bool:
-    # candidates ist dein dict: {"item_1": {...}, "item_2": {...}}
+
+    """Check whether candidates contain the required base item types."""
     types = [it.get("type") for it in candidates.values()]
 
-    # super simple: brauchst mindestens 1 "schuhe" und mindestens 2 "unten" und 2 "oben"
+
     shoes = sum(t in {"schuhe", "stiefel", "boots"} for t in types)
 
     bottoms = sum(t in {"hose", "jeans", "rock"} for t in types)
     tops = sum(t in {"shirt", "hoodie", "bluse", "hemd", "blazer", "sport"} for t in types)
 
-    # kleid zählt als "top + bottom" (weil 1-teilig)
+
     dresses = sum(t == "kleid" for t in types)
     tops += dresses
     bottoms += dresses
@@ -81,25 +87,18 @@ class NotEnoughItemsForOutfitError(Exception):
     """Raised when the candidate pool doesn't contain enough items to build 3 outfits."""
 
     def __init__(self, message: str = "nicht genügend verschiedene Items zum Erstellen eines Outfits"):
+        """Initialize the error with a custom or default message."""
         super().__init__(message)
 
 
 
 def create_response(input_data, filtered_ids):
+    """Retrieve candidates and request structured OpenAI outfits."""
     query_vec = input_to_vector(input_data)
     raw_results = return_data_with_vector_similarity_search(query_vec, filtered_ids)
 
-    with open("create_response_query_vec.json", "w", encoding="utf-8") as f:
-        json.dump(query_vec, f, ensure_ascii=False, indent=2)
-
-    with open("create_response_ids.json", "w", encoding="utf-8") as f:
-        json.dump(filtered_ids, f, ensure_ascii=False, indent=2)
-
     items = convert_selected_data_into_list_of_dictionary(raw_results)
     items, allowed_ids = break_down_data_for_llm(items)
-
-    with open("create_response_items_for_llm.json", "w", encoding="utf-8") as f:
-        json.dump(items, f, ensure_ascii=False, indent=2)
 
     if not has_minimum_items(items):
         raise NotEnoughItemsForOutfitError()
@@ -110,9 +109,6 @@ def create_response(input_data, filtered_ids):
         "candidates": items,
         "allowed_ids": allowed_ids,
     }
-    with open("create_response_payload.json", "w", encoding="utf-8") as f:
-        json.dump(payload, f, ensure_ascii=False, indent=2)
-
     response = client.responses.parse(
         model="gpt-4o-mini",
         temperature=0.3,
@@ -131,6 +127,7 @@ def create_response(input_data, filtered_ids):
 
 
 def create_answer(response_and_ids):
+    """Compare the response's declared item IDs with the allowed IDs."""
     response, allowed_ids = response_and_ids
     data = response.output_parsed.model_dump()
 
@@ -152,9 +149,5 @@ def create_answer(response_and_ids):
     }
 
 
-    with open("llm_answer.json", "w", encoding="utf-8") as f:
-        json.dump(result, f, ensure_ascii=False, indent=2)
-
     return result
-
 
