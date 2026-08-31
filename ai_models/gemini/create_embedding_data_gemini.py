@@ -91,8 +91,6 @@ def create_missing_gemini_embeddings(
             session.add(embedding_record)
 
 
-
-
             session.commit()
 
             created_count += 1
