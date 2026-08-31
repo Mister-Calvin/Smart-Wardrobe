@@ -5,7 +5,6 @@ from sqlalchemy import text
 from models import Base, engine
 
 
-
 from ai_models.gemini.gemini_embedding_model import (
     GeminiWardrobeEmbedding,
 )
