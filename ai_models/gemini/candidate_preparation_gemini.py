@@ -1,3 +1,5 @@
+"""Prepare compact wardrobe candidates for Gemini."""
+
 from ai_models.shared.item_category_mapper import (
     get_item_category,
 )
@@ -6,6 +8,7 @@ from ai_models.shared.item_category_mapper import (
 def prepare_candidates_for_gemini(
     items: list[dict],
 ) -> tuple[dict[str, dict], list[int]]:
+    """Build a compact candidate mapping and its ordered allowed IDs."""
     if not isinstance(items, list):
         raise TypeError(
             "items muss eine Liste sein."
