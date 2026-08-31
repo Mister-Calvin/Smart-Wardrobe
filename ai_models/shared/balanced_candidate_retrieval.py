@@ -58,7 +58,6 @@ def build_category_order(
         add_category(category)
 
 
-
     for category in priority_categories or ():
         add_category(category)
 
@@ -202,8 +201,6 @@ def build_balanced_candidate_pool(
     }
 
     selected_items: list[dict] = []
-
-
 
 
     while len(selected_items) < max_candidates:
