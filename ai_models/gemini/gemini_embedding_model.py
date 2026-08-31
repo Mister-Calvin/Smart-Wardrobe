@@ -16,7 +16,7 @@ from ai_models.gemini.gemini_client import (
 
 
 class GeminiWardrobeEmbedding(Base):
-    """Store one Gemini embedding for a wardrobe item and model configuration."""
+    """Store a Gemini embedding for one wardrobe item and model setup."""
     __tablename__ = "wardrobe_gemini_embeddings"
 
     __table_args__ = (
