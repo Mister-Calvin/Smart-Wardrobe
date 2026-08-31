@@ -74,7 +74,6 @@
             const data = await res.json();
             addMsg("Bot", data.assistant_text);
 
-            // 🔥 Aktualisierte Antwort direkt in der UI ersetzen
             answerTextEl.textContent = data.answer_text;
 
           } catch (e) {
@@ -87,7 +86,6 @@
           if (e.key === "Enter") sendMessage();
         });
 
-        // Optional: Begrüßung
         addMsg("Bot", "Hi! Demo-Chat aktiv. Nutze replace:/append:/delete: um den Antworttext zu verändern.");
       </script>
 
