@@ -1,3 +1,5 @@
+"""Render validated Gemini outfit IDs as wardrobe descriptions."""
+
 from models import Session, Wardrobe
 
 
@@ -16,6 +18,7 @@ SLOT_LABELS = {
 def build_gemini_answer_text(
     result: dict,
 ) -> str:
+    """Resolve outfit item IDs and format the result as German text."""
     if not isinstance(result, dict):
         raise TypeError(
             "result muss ein Dictionary sein."
