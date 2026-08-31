@@ -1,3 +1,5 @@
+"""Check whether wardrobe candidates can form enough outfits."""
+
 from typing import TypedDict
 
 from ai_models.shared.balanced_candidate_retrieval import (
@@ -9,6 +11,7 @@ from ai_models.shared.item_category_mapper import (
 
 
 class CandidatePoolAnalysis(TypedDict):
+    """Describe category counts and outfit feasibility for a candidate pool."""
     category_counts: dict[ItemCategory, int]
     base_variants: int
     required_outfits: int
@@ -20,6 +23,7 @@ def analyze_candidate_pool(
     items: list[dict],
     required_outfits: int = 3,
 ) -> CandidatePoolAnalysis:
+    """Count categories and calculate the available base combinations."""
     if (
         isinstance(required_outfits, bool)
         or not isinstance(required_outfits, int)
@@ -79,6 +83,7 @@ def has_enough_candidates_for_outfits(
     items: list[dict],
     required_outfits: int = 3,
 ) -> bool:
+    """Return whether a pool has shoes and enough base combinations."""
     analysis = analyze_candidate_pool(
         items=items,
         required_outfits=required_outfits,
