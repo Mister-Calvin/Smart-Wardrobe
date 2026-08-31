@@ -328,7 +328,6 @@ def get_input_and_built_answer(
     request: Request,
 
 
-
     user_input: str = Form(...),
     event_input: str = Form(...),
     location_input: str = Form(...),
@@ -382,9 +381,7 @@ def get_input_and_built_answer(
         return templates.TemplateResponse("error.html", {"request": request, "message": "nicht genügend Items zum Erstellen eines Outfits"})
 
 
-
     state = run_agent_from_payload(weather_input=weather_input, event_input=event_input, mood_input=mood_input)
-
 
 
     payload = {
