@@ -84,7 +84,7 @@ def has_minimum_items(candidates: dict) -> bool:
 
 
 class NotEnoughItemsForOutfitError(Exception):
-    """Raised when the candidate pool doesn't contain enough items to build 3 outfits."""
+    """Indicate that the candidate pool cannot form three outfits."""
 
     def __init__(self, message: str = "nicht genügend verschiedene Items zum Erstellen eines Outfits"):
         """Initialize the error with a custom or default message."""
@@ -150,4 +150,3 @@ def create_answer(response_and_ids):
 
 
     return result
-
