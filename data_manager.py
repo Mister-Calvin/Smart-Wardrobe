@@ -1,3 +1,5 @@
+"""Provide wardrobe operations with provider-specific embedding writes."""
+
 from ai_models.embedding_writer_router import (
     normalize_embedding_provider,
     upsert_item_embedding,
@@ -7,15 +9,18 @@ from models import Wardrobe, Session
 class EmbeddingProviderNotConfiguredError(
     RuntimeError
 ):
+    """Indicate that an embedding write has no selected provider."""
     pass
 
 
 class DataManager:
 
+    """Manage wardrobe records and their selected-provider embeddings."""
     def __init__(
         self,
         embedding_provider: str | None = None,
     ):
+        """Initialize the manager with an optional embedding provider."""
         if embedding_provider is None:
             self._embedding_provider = None
 
@@ -29,6 +34,7 @@ class DataManager:
     def _require_embedding_provider(
         self,
     ) -> str:
+        """Return the provider or raise when none is configured."""
         if self._embedding_provider is None:
             raise (
                 EmbeddingProviderNotConfiguredError(
@@ -41,6 +47,7 @@ class DataManager:
         return self._embedding_provider
 
     def get_all_items(self):
+        """Return all stored wardrobe items."""
         session = Session()
 
         try:
@@ -55,6 +62,7 @@ class DataManager:
         self,
         id,
     ):
+        """Return one wardrobe item by ID or None when it is absent."""
         session = Session()
 
         try:
@@ -71,6 +79,7 @@ class DataManager:
         self,
         ids,
     ):
+        """Return wardrobe items matching the supplied IDs."""
         session = Session()
 
         try:
@@ -105,6 +114,7 @@ class DataManager:
         type,
         score,
     ):
+        """Create an item and its embedding in one transaction."""
         embedding_provider = (
             self._require_embedding_provider()
         )
@@ -122,8 +132,7 @@ class DataManager:
 
             session.add(new_item)
 
-            # Erzeugt die ID, führt aber
-            # noch keinen Commit aus.
+
             session.flush()
 
             upsert_item_embedding(
@@ -154,6 +163,7 @@ class DataManager:
         self,
         id,
     ):
+        """Delete one wardrobe item and report whether it succeeded."""
         session = Session()
 
         try:
@@ -185,6 +195,7 @@ class DataManager:
             session.close()
 
     def delete_all_items(self):
+        """Delete every wardrobe item and report whether it succeeded."""
         session = Session()
 
         try:
@@ -218,6 +229,7 @@ class DataManager:
         type,
         score,
     ):
+        """Update an item and refresh its provider-specific embedding."""
         embedding_provider = (
             self._require_embedding_provider()
         )

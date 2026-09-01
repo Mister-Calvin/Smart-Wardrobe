@@ -1,3 +1,5 @@
+"""Define the database model for Gemini wardrobe embeddings."""
+
 from sqlalchemy import (
     Column,
     ForeignKey,
@@ -14,6 +16,7 @@ from ai_models.gemini.gemini_client import (
 
 
 class GeminiWardrobeEmbedding(Base):
+    """Store a Gemini embedding for one wardrobe item and model setup."""
     __tablename__ = "wardrobe_gemini_embeddings"
 
     __table_args__ = (
@@ -54,6 +57,7 @@ class GeminiWardrobeEmbedding(Base):
     )
 
     def __repr__(self) -> str:
+        """Return a concise representation of the embedding record."""
         return (
             f"GeminiWardrobeEmbedding("
             f"wardrobe_id={self.wardrobe_id}, "

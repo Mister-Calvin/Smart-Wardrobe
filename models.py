@@ -1,3 +1,5 @@
+"""Define wardrobe records, database access, and demonstration data."""
+
 from sqlalchemy import create_engine, Column, Integer, String
 from sqlalchemy.orm import declarative_base, sessionmaker
 from dotenv import load_dotenv
@@ -19,10 +21,11 @@ engine = create_engine(
     DATABASE_URL
 )
 
-Base = declarative_base() #Grundlage, aus der SQLAlchemy später Tabellen erzeugt
+Base = declarative_base()
 
 
 class Wardrobe(Base):
+    """Store descriptive wardrobe data and an optional OpenAI embedding."""
     __tablename__ = 'wardrobe'
 
     id = Column(Integer, primary_key=True)
@@ -35,6 +38,7 @@ class Wardrobe(Base):
     embedding = Column(Vector(1536), nullable=True)
 
     def to_dict(self):
+        """Return serializable wardrobe data without its embedding."""
         return {
             "id": self.id,
             "name": self.name,
@@ -46,24 +50,24 @@ class Wardrobe(Base):
         }
 
     def __repr__(self):
+        """Return a developer-readable representation of the item."""
         return (f"name:{self.name}, description: {self.description}, color: {self.color},"
                 f"condition: {self.condition}, type: {self.type}, SCORE: {self.score} - id: {self.id}")
 
-#Base.metadata.create_all(engine) #tabelle erstellen
-Session = sessionmaker(bind=engine, autoflush=False)  #Session = Verbindung zur Datenbank
+
+Session = sessionmaker(bind=engine, autoflush=False)
 session = Session()
 
 
-
-
-
 def clear_wardrobe():
+    """Delete all wardrobe records and commit the change."""
     session.query(Wardrobe).delete()
     session.commit()
     print(">>> Datenbank geleert")
 
-#clear_wardrobe()
+
 def create_item():
+    """Insert the base demonstration wardrobe collection."""
     items = (
         Wardrobe(name="Schwarzer Hoodie", description="Oversized, Baumwolle", color="schwarz", condition="neu",
                  type="hoodie", score=8),
@@ -165,10 +169,9 @@ def create_item():
     session.add_all(items)
     session.commit()
 
-#create_item()
-#clear_wardrobe()
 
 def create_item_colorful_50():
+    """Insert the colorful demonstration wardrobe collection."""
     items = (
         Wardrobe(name="Türkiser Hoodie", description="Oversized, Baumwolle, weiche Innenseite", color="türkis", condition="neu", type="hoodie", score=8),
         Wardrobe(name="Pinkes Basic T-Shirt", description="Rundhals, leicht, everyday", color="pink", condition="neu", type="shirt", score=6),
@@ -234,11 +237,11 @@ def create_item_colorful_50():
     session.add_all(items)
     session.commit()
 
-#create_item_colorful_50()
 
 def create_item_weather_50():
+    """Insert weather-focused demonstration wardrobe items."""
     items = (
-        # REGEN (Rain)
+
         Wardrobe(name="Regenjacke Hardshell (Moosgrün)", description="Wasserdicht (Hardshell), Kapuze, versiegelte Nähte", color="moosgrün", condition="neu", type="jacke", score=9),
         Wardrobe(name="Regenhose (Schwarz)", description="Wasserdicht, überziehbar, verschweißte Nähte", color="schwarz", condition="neu", type="hose", score=8),
         Wardrobe(name="Gummistiefel (Navy)", description="Wasserdicht, rutschfeste Sohle, knöchelhoch", color="navy", condition="sehr gut", type="schuhe", score=8),
@@ -248,7 +251,7 @@ def create_item_weather_50():
         Wardrobe(name="Regen-Overknee-Socken (Grau)", description="Wollmix, schnell trocknend, warm", color="grau", condition="neu", type="socks", score=7),
         Wardrobe(name="Drybag (Orange)", description="Wasserdichter Packsack, Rolltop, 10L", color="orange", condition="neu", type="bag", score=8),
 
-        # SCHNEE (Snow)
+
         Wardrobe(name="Daunenparka (Schneeweiß)", description="Sehr warm, winddicht, Kapuze", color="schneeweiß", condition="sehr gut", type="mantel", score=9),
         Wardrobe(name="Skijacke (Kobaltblau)", description="Isoliert, Schneefang, wasserdicht", color="kobaltblau", condition="gut", type="jacke", score=9),
         Wardrobe(name="Thermo-Leggings (Schwarz)", description="Fleece innen, eng anliegend, als Layer", color="schwarz", condition="neu", type="bottom", score=8),
@@ -258,7 +261,7 @@ def create_item_weather_50():
         Wardrobe(name="Merino-Wollsocken (Bordeaux)", description="Extra warm, geruchshemmend", color="bordeaux", condition="neu", type="socks", score=8),
         Wardrobe(name="Fäustlinge (Rot)", description="Gefüttert, winddicht, wasserabweisend", color="rot", condition="neu", type="accessory", score=8),
 
-        # WIND (Wind)
+
         Wardrobe(name="Windbreaker (Türkis)", description="Winddicht, leicht, packbar", color="türkis", condition="gut", type="jacke", score=8),
         Wardrobe(name="Softshell-Jacke (Grau)", description="Windstopper, leicht wasserabweisend, elastisch", color="grau", condition="sehr gut", type="jacke", score=8),
         Wardrobe(name="Winddichte Laufweste (Neonpink)", description="Front winddicht, Rücken atmungsaktiv", color="neonpink", condition="neu", type="weste", score=7),
@@ -268,7 +271,7 @@ def create_item_weather_50():
         Wardrobe(name="Sturmhaube (Dunkelblau)", description="Atmungsaktiv, winddicht, unter Helm", color="dunkelblau", condition="neu", type="headwear", score=7),
         Wardrobe(name="Windfester Schal (Camel)", description="Wolle-Mix, dicht gewebt", color="camel", condition="gut", type="accessory", score=7),
 
-        # KÄLTE (Cold)
+
         Wardrobe(name="Thermo-Unterhemd (Schwarz)", description="Base Layer, warm, schnelltrocknend", color="schwarz", condition="neu", type="top", score=8),
         Wardrobe(name="Merino-Longsleeve (Tannengrün)", description="Wärmt, kratzt nicht, als Base Layer", color="tannengrün", condition="neu", type="top", score=9),
         Wardrobe(name="Fleecejacke (Orange)", description="Midlayer, weich, warm", color="orange", condition="gut", type="outerwear", score=8),
@@ -278,7 +281,7 @@ def create_item_weather_50():
         Wardrobe(name="Wintermütze (Weinrot)", description="Rippstrick, sehr warm", color="weinrot", condition="neu", type="headwear", score=7),
         Wardrobe(name="Wollschal XXL (Grau)", description="Groß, warm, weich", color="grau", condition="sehr gut", type="accessory", score=8),
 
-        # HITZE (Heat)
+
         Wardrobe(name="Leinenhemd Kurzarm (Weiß)", description="Sehr luftig, Sommer", color="weiß", condition="neu", type="top", score=8),
         Wardrobe(name="Leinenhose (Sand)", description="Atmungsaktiv, locker, sommerlich", color="sand", condition="neu", type="bottom", score=8),
         Wardrobe(name="Sommer-Shorts (Mint)", description="Leicht, relaxed fit", color="mint", condition="gut", type="bottom", score=7),
@@ -288,7 +291,7 @@ def create_item_weather_50():
         Wardrobe(name="Sandalen (Weiß)", description="Leicht, bequem, sommerlich", color="weiß", condition="gut", type="shoes", score=7),
         Wardrobe(name="Sneaker Lite (Hellgrau)", description="Ultraleicht, atmungsaktiv", color="hellgrau", condition="gut", type="shoes", score=7),
 
-        # ALLE JAHRESZEITEN / LAYERING (All seasons)
+
         Wardrobe(name="Übergangsjacke (Oliv)", description="Leicht gefüttert, für Frühling/Herbst", color="oliv", condition="gut", type="outerwear", score=8),
         Wardrobe(name="Trenchcoat (Beige)", description="Wettertauglich, klassisch, Übergang", color="beige", condition="sehr gut", type="outerwear", score=9),
         Wardrobe(name="Overshirt (Karo Blau/Rot)", description="Perfekt zum Layern, dickes Flanell", color="blau/rot", condition="gut", type="top", score=8),
@@ -298,7 +301,7 @@ def create_item_weather_50():
         Wardrobe(name="Sneaker Allround (Weiß/Grün)", description="Alltag, bequem, passt zu allem", color="weiß/grün", condition="sehr gut", type="shoes", score=8),
         Wardrobe(name="Daypack (Schwarz/Orange)", description="Alltag, wetterresistent, 18L", color="schwarz/orange", condition="gut", type="bag", score=8),
 
-        # EXTRA: MIXED WEATHER (wechselhaft)
+
         Wardrobe(name="Packbare Regenhülle Rucksack (Neonorange)", description="Wasserdichte Cover, reflektierend", color="neonorange", condition="neu", type="accessory", score=7),
         Wardrobe(name="Hybridjacke (Schwarz/Gelb)", description="Winddicht, leicht isoliert, wasserabweisend", color="schwarz/gelb", condition="sehr gut", type="outerwear", score=8),
         Wardrobe(name="Thermo-Beanie (Petrol)", description="Extra warm, feuchtigkeitsableitend", color="petrol", condition="neu", type="headwear", score=7),
@@ -309,5 +312,3 @@ def create_item_weather_50():
 
     session.add_all(items)
     session.commit()
-
-#create_item_weather_50()

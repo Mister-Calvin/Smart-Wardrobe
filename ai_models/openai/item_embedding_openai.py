@@ -1,3 +1,5 @@
+"""Build and generate OpenAI embeddings for wardrobe items."""
+
 import os
 from functools import lru_cache
 
@@ -18,6 +20,7 @@ OPENAI_EMBEDDING_DIMENSIONS = 1536
 @lru_cache(maxsize=1)
 def get_openai_embedding_client(
 ) -> OpenAIEmbeddings:
+    """Return the cached OpenAI embedding client."""
     api_key = os.getenv(
         "OPENAI_API_KEY"
     )
@@ -45,6 +48,7 @@ def build_item_text(
     item_type: str | None,
     score: int | None,
 ) -> str:
+    """Convert wardrobe attributes into the text used for embedding."""
     return (
         f"name: {name}\n"
         f"description: {description}\n"
@@ -63,6 +67,7 @@ def item_to_vector(
     item_type: str | None,
     score: int | None,
 ) -> list[float]:
+    """Generate and validate an OpenAI embedding for one wardrobe item."""
     item_text = build_item_text(
         name=name,
         description=description,

@@ -1,3 +1,5 @@
+"""Store Gemini item embeddings in their provider-specific table."""
+
 from models import Wardrobe
 
 from ai_models.gemini.gemini_client import (
@@ -17,6 +19,7 @@ def upsert_gemini_item_embedding(
     session,
     item: Wardrobe,
 ) -> GeminiWardrobeEmbedding:
+    """Create or update the configured Gemini embedding for an item."""
     if not isinstance(item, Wardrobe):
         raise TypeError(
             "item muss ein Wardrobe-Objekt sein."

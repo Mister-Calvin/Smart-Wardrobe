@@ -1,3 +1,5 @@
+"""Search wardrobe items through matching Gemini embeddings."""
+
 from models import Session, Wardrobe
 
 from ai_models.gemini.gemini_client import (
@@ -11,6 +13,7 @@ from ai_models.gemini.gemini_embedding_model import (
 def count_searchable_gemini_items(
     filtered_ids: list[int] | None = None,
 ) -> int:
+    """Count items searchable with the configured Gemini embedding."""
     if filtered_ids is not None and not filtered_ids:
         return 0
 
@@ -47,6 +50,7 @@ def search_similar_items(
     filtered_ids: list[int] | None = None,
     limit: int = 30,
 ) -> list[dict]:
+    """Return wardrobe items ranked by Gemini vector distance."""
     if len(input_vector) != EMBEDDING_DIMENSIONS:
         raise ValueError(
             f"Der Query-Vektor hat {len(input_vector)} Dimensionen. "

@@ -280,7 +280,6 @@ Deleting a wardrobe item also deletes its Gemini embedding through `ON DELETE CA
 ├── data_manager.py
 ├── db_filters.py
 ├── fast_api.py
-├── json_manager.py
 ├── models.py
 ├── requirements.txt
 └── .env.example
@@ -371,6 +370,26 @@ Create the local configuration file:
 cp .env.example .env
 ```
 
+Create a Gemini API key before editing `.env`:
+
+1. Open [Google AI Studio](https://ai.google.dev/aistudio).
+2. Sign in with a Google account and create or copy an API key.
+3. Use a project with Gemini Free Tier access if you want to run the
+   documented setup without paid API usage.
+
+The Free Tier has limited quotas, and its available models can change.
+Current limits and availability are listed in the
+[official Gemini API pricing documentation](https://ai.google.dev/gemini-api/docs/pricing).
+
+Google AI Studio also lets you test the Gemini generation models available
+to your account. Smart Wardrobe has been tested with
+`gemini-3.1-flash-lite`. To use another compatible text-generation model,
+copy its model code into `GEMINI_GENERATION_MODEL`. The API key itself is not
+limited to the model shown in the example, but the selected model must be
+available to that key and support the structured output used by the outfit
+pipeline. The current model list is available in the
+[official Gemini model documentation](https://ai.google.dev/gemini-api/docs/models).
+
 Generate a random session secret:
 
 ```bash
@@ -391,6 +410,12 @@ GEMINI_EMBEDDING_DIMENSIONS=1536
 
 OPENAI_API_KEY=YOUR_OPENAI_API_KEY_IF_USED
 ```
+
+`GEMINI_GENERATION_MODEL` controls outfit generation. Semantic wardrobe
+search uses the separate `GEMINI_EMBEDDING_MODEL`. For the documented setup,
+keep `GEMINI_EMBEDDING_MODEL=gemini-embedding-2` and
+`GEMINI_EMBEDDING_DIMENSIONS=1536` unchanged. Switching only the generation
+model does not require the wardrobe embeddings to be rebuilt.
 
 Database URL format:
 
@@ -570,17 +595,6 @@ The backfill commands create only missing embeddings. They do not automatically 
 
 If both providers must remain fully synchronized, the item currently has to be updated once with each provider or a dedicated cross-provider refresh command must be added.
 
-## Development diagnostics
-
-Some application paths write intermediate JSON diagnostics locally, including filtered IDs, provider payloads, vector-search results, and model responses.
-
-These files:
-
-- Are runtime development artifacts
-- Are ignored by Git
-- May contain user prompts or wardrobe information
-- Should not be committed to GitHub
-
 ## What this project demonstrates
 
 Smart Wardrobe demonstrates practical knowledge in:
@@ -624,7 +638,6 @@ Current limitations include:
 - External provider requests can fail because of quotas or rate limits
 - Hard filters can still leave too few suitable clothing categories
 - Session cookies are configured for local HTTP development
-- Runtime diagnostic JSON files are still generated locally
 
 ## Possible next steps
 

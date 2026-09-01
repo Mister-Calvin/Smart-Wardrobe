@@ -1,3 +1,5 @@
+"""Configure Gemini API clients from environment variables."""
+
 import os
 from functools import lru_cache
 
@@ -25,6 +27,7 @@ EMBEDDING_DIMENSIONS = int(
 
 @lru_cache(maxsize=1)
 def get_gemini_client() -> genai.Client:
+    """Return the cached Gemini client configured with the API key."""
     api_key = os.getenv("GEMINI_API_KEY")
 
     if not api_key:
@@ -36,6 +39,7 @@ def get_gemini_client() -> genai.Client:
 
 
 def test_connection() -> str:
+    """Send a fixed Gemini request and return its response text."""
     client = get_gemini_client()
 
     interaction = client.interactions.create(

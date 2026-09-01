@@ -1,3 +1,5 @@
+"""Define the rules used for Gemini outfit generation."""
+
 SYSTEM_PROMPT = """
 Du bist ein professioneller Modeberater.
 

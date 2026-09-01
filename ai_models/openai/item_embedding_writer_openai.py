@@ -1,3 +1,5 @@
+"""Attach OpenAI embeddings to wardrobe items in an existing session."""
+
 from models import Wardrobe
 
 from ai_models.openai.item_embedding_openai import (
@@ -10,6 +12,7 @@ def upsert_openai_item_embedding(
     session,
     item: Wardrobe,
 ) -> Wardrobe:
+    """Generate an OpenAI embedding and assign it to a flushed item."""
     if session is None:
         raise TypeError(
             "Eine Datenbank-Session "

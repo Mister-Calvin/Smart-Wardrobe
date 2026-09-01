@@ -1,3 +1,5 @@
+"""Derive retrieval priorities from weather, event, and mood."""
+
 from typing import TypedDict
 
 from ai_models.shared.balanced_candidate_retrieval import (
@@ -9,6 +11,7 @@ from ai_models.shared.item_category_mapper import (
 
 
 class RetrievalPreferences(TypedDict):
+    """Describe prioritized categories and candidate limit overrides."""
     priority_categories: list[ItemCategory]
     category_limit_overrides: dict[
         ItemCategory,
@@ -19,6 +22,7 @@ class RetrievalPreferences(TypedDict):
 def normalize_text(
     value: object,
 ) -> str:
+    """Convert a context value to stripped case-insensitive text."""
     return str(value or "").strip().casefold()
 
 
@@ -26,6 +30,7 @@ def contains_any(
     text: str,
     keywords: set[str],
 ) -> bool:
+    """Return whether the text contains any supplied keyword."""
     return any(
         keyword in text
         for keyword in keywords
@@ -37,6 +42,7 @@ def build_retrieval_preferences(
     event: object = "",
     mood: object = "",
 ) -> RetrievalPreferences:
+    """Build category priorities and limits from outfit context."""
     normalized_weather = normalize_text(
         weather
     )
@@ -60,6 +66,7 @@ def build_retrieval_preferences(
         category: ItemCategory,
         extra_items: int = 1,
     ) -> None:
+        """Add a category and keep its greatest requested limit."""
         if category not in priority_categories:
             priority_categories.append(
                 category
@@ -86,7 +93,7 @@ def build_retrieval_preferences(
             )
         )
 
-    # Kälte benötigt zusätzliche Schutzschichten.
+
     if contains_any(
         normalized_weather,
         {
@@ -103,8 +110,7 @@ def build_retrieval_preferences(
         prioritize("headwear")
         prioritize("socks")
 
-    # Regen und Wind benötigen mehr Oberbekleidung.
-    # Wasserfestigkeit selbst bewertet die Similarity Search.
+
     if contains_any(
         normalized_weather,
         {
@@ -121,7 +127,7 @@ def build_retrieval_preferences(
     ):
         prioritize("outerwear")
 
-    # Für Arbeit können Blazer oder Jacken relevant sein.
+
     if contains_any(
         normalized_event,
         {
@@ -135,8 +141,7 @@ def build_retrieval_preferences(
     ):
         prioritize("outerwear")
 
-    # Formelle Anlässe profitieren von mehr Auswahl
-    # bei Kleidern und ergänzenden Teilen.
+
     elif contains_any(
         normalized_event,
         {
@@ -152,8 +157,7 @@ def build_retrieval_preferences(
         prioritize("bag")
         prioritize("accessory")
 
-    # Bei Date oder Restaurant sind ergänzende
-    # Teile besonders relevant.
+
     elif contains_any(
         normalized_event,
         {
@@ -166,8 +170,7 @@ def build_retrieval_preferences(
         prioritize("bag")
         prioritize("accessory")
 
-    # Bei gemütlichen Looks sind zusätzliche
-    # Socken sinnvoll, nicht zusätzliche Basisteile.
+
     if contains_any(
         normalized_mood,
         {
@@ -181,7 +184,7 @@ def build_retrieval_preferences(
     ):
         prioritize("socks")
 
-    # Auffällige Looks profitieren von Accessoires.
+
     if contains_any(
         normalized_mood,
         {

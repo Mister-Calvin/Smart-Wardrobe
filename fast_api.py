@@ -1,4 +1,5 @@
-import json
+"""Configure the FastAPI wardrobe and outfit application."""
+
 import os
 from pathlib import Path
 
@@ -19,8 +20,6 @@ from db_filters import (
     build_filter_kwargs_from_strings,
     filter_db_dynamic,
 )
-from json_manager import wirte_json
-
 from ai_models.provider_router import (
     AIProviderGenerationError,
     AIProviderHallucinationError,
@@ -77,6 +76,7 @@ def select_ai_provider(
     request: Request,
     ai_provider: str = Form(...),
 ):
+    """Store the selected AI provider and redirect to the wardrobe."""
     set_selected_ai_provider(
         request=request,
         provider=ai_provider,
@@ -90,6 +90,7 @@ def select_ai_provider(
 
 @app.get('/json')
 def index():
+    """Return all wardrobe items as JSON-compatible dictionaries."""
     manager = DataManager()
     items = manager.get_all_items()
     return [item.to_dict() for item in items]
@@ -98,6 +99,7 @@ def index():
 def landingpage(
     request: Request,
 ):
+    """Render the wardrobe landing page and selected provider."""
     selected_ai_provider = (
         get_selected_ai_provider(
             request
@@ -122,6 +124,7 @@ def landingpage(
 def show_create_form(
     request: Request,
 ):
+    """Render the item creation form for the selected provider."""
     selected_provider = (
         require_selected_ai_provider(
             request
@@ -149,6 +152,7 @@ def create_item(
     type: str = Form(...),
     score: int = Form(...),
 ):
+    """Create an item with the selected provider's embedding."""
     selected_provider = (
         require_selected_ai_provider(
             request
@@ -192,6 +196,7 @@ def create_item(
 
 @app.post("/items/{item_id}/delete")
 def delete_item(item_id: int):
+    """Delete an item and redirect to the wardrobe."""
     manager = DataManager()
     manager.delete_item(item_id)
     return RedirectResponse(url="/", status_code=HTTP_303_SEE_OTHER)
@@ -201,6 +206,7 @@ def show_edit_formular(
     request: Request,
     item_id: int,
 ):
+    """Render the item edit form or a not-found response."""
     selected_provider = (
         require_selected_ai_provider(
             request
@@ -253,6 +259,7 @@ def edit_item(
     type: str = Form(...),
     score: int = Form(...),
 ):
+    """Update an item and its selected-provider embedding."""
     selected_provider = (
         require_selected_ai_provider(
             request
@@ -294,11 +301,12 @@ def edit_item(
         status_code=HTTP_303_SEE_OTHER,
     )
 
-#endpoint der input_for_llm.html wiedergibt mit GET
+
 @app.get("/input")
 def show_input_bar(
     request: Request,
 ):
+    """Render the outfit request form for the selected provider."""
     selected_provider = (
         require_selected_ai_provider(
             request
@@ -320,7 +328,6 @@ def get_input_and_built_answer(
     request: Request,
 
 
-    # LLM Input
     user_input: str = Form(...),
     event_input: str = Form(...),
     location_input: str = Form(...),
@@ -328,7 +335,7 @@ def get_input_and_built_answer(
     weather_input: str = Form(...),
     mood_input: str = Form(...),
 
-    # Filter Inputs (NEU)
+
     colors_any: str = Form(""),
     colors_all: str = Form(""),
     score: str = Form(""),
@@ -341,13 +348,14 @@ def get_input_and_built_answer(
     text_any: str = Form(""),
     limit: str = Form(""),
 ):
+    """Filter wardrobe items and render outfits from the selected provider."""
     selected_provider = (
         require_selected_ai_provider(
             request
         )
     )
 
-    # 1) Filter kwargs bauen (NUR hier Strings -> kwargs)
+
     filter_kwargs = build_filter_kwargs_from_strings(
         colors_any=colors_any,
         colors_all=colors_all,
@@ -362,7 +370,7 @@ def get_input_and_built_answer(
         limit=limit,
     )
 
-    # 2) IDs filtern
+
     filtered_ids = filter_db_dynamic(**filter_kwargs)
 
     if not filtered_ids:
@@ -373,18 +381,9 @@ def get_input_and_built_answer(
         return templates.TemplateResponse("error.html", {"request": request, "message": "nicht genügend Items zum Erstellen eines Outfits"})
 
 
-
-    with open("fast_api_filter_ids.json", "w", encoding="utf-8") as f:
-        json.dump(filtered_ids, f, ensure_ascii=False, indent=2)
-
-
-
-
-
     state = run_agent_from_payload(weather_input=weather_input, event_input=event_input, mood_input=mood_input)
 
 
-    # 3) Payload wie gehabt + filtered_ids ergänzen
     payload = {
         "user_input": user_input,
         "context": {
@@ -412,9 +411,6 @@ def get_input_and_built_answer(
             ),
         },
     }
-    wirte_json(data_to_wirte=payload, filename="fastapi_payload")
-    # 4) Pipeline starten
-
     answer_text = build_outfit_with_provider(
         provider=selected_provider,
         payload=payload,
@@ -434,6 +430,7 @@ async def handle_unknown_ai_provider(
     request: Request,
     exc: UnknownAIProviderError,
 ):
+    """Render an error page for an unknown provider."""
     return templates.TemplateResponse(
         "error.html",
         {
@@ -449,6 +446,7 @@ async def handle_ai_provider_request_error(
     request: Request,
     exc: AIProviderRequestError,
 ):
+    """Render an error page for an invalid provider request."""
     return templates.TemplateResponse(
         "error.html",
         {
@@ -464,6 +462,7 @@ async def handle_ai_provider_hallucination(
     request: Request,
     exc: AIProviderHallucinationError,
 ):
+    """Render an error page for invalid generated item IDs."""
     return templates.TemplateResponse(
         "error.html",
         {
@@ -479,6 +478,7 @@ async def handle_ai_provider_generation_error(
     request: Request,
     exc: AIProviderGenerationError,
 ):
+    """Render an error page when outfit generation fails."""
     return templates.TemplateResponse(
         "error.html",
         {
@@ -495,15 +495,8 @@ async def handle_missing_ai_provider(
     request: Request,
     exc: AIProviderNotSelectedError,
 ):
+    """Redirect home when no AI provider is selected."""
     return RedirectResponse(
         url="/",
         status_code=HTTP_303_SEE_OTHER,
     )
-
-# dann einer der die daten sendet mit POST
-
-#if __name__ == "__main__":
- #   import uvicorn
-  #  uvicorn.run("FastAPI:app", host="127.0.0.1", port=8000, reload=True)
-
-#uvicorn main:app --reload #start

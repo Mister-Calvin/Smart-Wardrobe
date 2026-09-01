@@ -1,3 +1,5 @@
+"""Backfill missing Gemini embeddings for wardrobe items."""
+
 from models import Session, Wardrobe
 
 from ai_models.gemini.gemini_client import (
@@ -15,6 +17,7 @@ from ai_models.gemini.item_embedding_gemini import (
 def create_missing_gemini_embeddings(
     limit: int | None = None,
 ) -> int:
+    """Create and store missing Gemini embeddings in resumable steps."""
     if limit is not None and limit <= 0:
         raise ValueError("limit muss größer als 0 sein.")
 
@@ -87,9 +90,7 @@ def create_missing_gemini_embeddings(
 
             session.add(embedding_record)
 
-            # Nach jedem Item speichern.
-            # Dadurch kann der Vorgang nach einem API-Fehler
-            # an der letzten Stelle fortgesetzt werden.
+
             session.commit()
 
             created_count += 1

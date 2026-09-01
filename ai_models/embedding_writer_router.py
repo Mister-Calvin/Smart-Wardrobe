@@ -1,3 +1,5 @@
+"""Route wardrobe embedding writes to the selected AI provider."""
+
 AVAILABLE_EMBEDDING_PROVIDERS = (
     "gemini",
     "openai",
@@ -5,6 +7,7 @@ AVAILABLE_EMBEDDING_PROVIDERS = (
 
 
 class EmbeddingProviderError(Exception):
+    """Provide a base exception for embedding provider failures."""
     pass
 
 
@@ -12,12 +15,14 @@ class UnknownEmbeddingProviderError(
     EmbeddingProviderError,
     ValueError,
 ):
+    """Indicate that an unsupported embedding provider was requested."""
     pass
 
 
 def normalize_embedding_provider(
     provider: str,
 ) -> str:
+    """Normalize and validate an embedding provider name."""
     if not isinstance(provider, str):
         raise TypeError(
             "provider muss ein String sein."
@@ -49,6 +54,7 @@ def upsert_item_embedding(
     item,
     provider: str,
 ):
+    """Write an item embedding with the selected provider implementation."""
     normalized_provider = (
         normalize_embedding_provider(
             provider

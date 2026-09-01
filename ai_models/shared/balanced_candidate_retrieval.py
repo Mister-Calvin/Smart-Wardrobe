@@ -1,3 +1,5 @@
+"""Build wardrobe candidate pools balanced across outfit categories."""
+
 from collections.abc import Iterable
 
 from ai_models.shared.item_category_mapper import (
@@ -39,22 +41,23 @@ OPTIONAL_CATEGORY_ORDER: tuple[ItemCategory, ...] = (
 def build_category_order(
     priority_categories: Iterable[ItemCategory] | None = None,
 ) -> tuple[ItemCategory, ...]:
+    """Order core, prioritized, and optional wardrobe categories."""
     ordered_categories: list[ItemCategory] = []
     seen_categories: set[ItemCategory] = set()
 
     def add_category(category: ItemCategory) -> None:
+        """Append a category once while preserving its order."""
         if category in seen_categories:
             return
 
         ordered_categories.append(category)
         seen_categories.add(category)
 
-    # Basisteile bleiben immer zuerst.
+
     for category in CORE_CATEGORY_ORDER:
         add_category(category)
 
-    # Später kann agentic_ai hier beispielsweise
-    # outerwear oder headwear priorisieren.
+
     for category in priority_categories or ():
         add_category(category)
 
@@ -67,6 +70,7 @@ def build_category_order(
 def build_category_limits(
     category_limits: dict[ItemCategory, int] | None = None,
 ) -> dict[ItemCategory, int]:
+    """Merge valid category limits with the default limits."""
     limits = DEFAULT_CATEGORY_LIMITS.copy()
 
     if category_limits is None:
@@ -98,6 +102,7 @@ def build_category_limits(
 def group_items_by_category(
     items: list[dict],
 ) -> dict[ItemCategory, list[dict]]:
+    """Group unique wardrobe items by normalized category."""
     if not isinstance(items, list):
         raise TypeError(
             "items muss eine Liste sein."
@@ -141,6 +146,7 @@ def group_items_by_category(
 def count_pool_categories(
     items: list[dict],
 ) -> dict[ItemCategory, int]:
+    """Count wardrobe items in each normalized category."""
     counts: dict[ItemCategory, int] = {
         category: 0
         for category in DEFAULT_CATEGORY_LIMITS
@@ -161,6 +167,7 @@ def build_balanced_candidate_pool(
     category_limits: dict[ItemCategory, int] | None = None,
     priority_categories: Iterable[ItemCategory] | None = None,
 ) -> list[dict]:
+    """Select candidates in category round-robin order within all limits."""
     if not isinstance(max_candidates, int):
         raise TypeError(
             "max_candidates muss eine Ganzzahl sein."
@@ -195,9 +202,7 @@ def build_balanced_candidate_pool(
 
     selected_items: list[dict] = []
 
-    # Round-Robin-Auswahl:
-    # erst ein Top, dann ein Bottom, dann Schuhe usw.
-    # Danach beginnt die nächste Runde.
+
     while len(selected_items) < max_candidates:
         item_added = False
 

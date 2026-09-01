@@ -1,3 +1,5 @@
+"""Retrieve balanced Gemini candidates with an adaptive fallback."""
+
 from collections.abc import Iterable
 from typing import TypedDict
 
@@ -19,6 +21,7 @@ from ai_models.shared.item_category_mapper import (
 class AdaptiveCandidateRetrievalResult(
     TypedDict
 ):
+    """Describe candidate retrieval results and fallback diagnostics."""
     candidate_items: list[dict]
     pool_analysis: CandidatePoolAnalysis
     initial_pool_analysis: CandidatePoolAnalysis
@@ -38,6 +41,7 @@ def validate_positive_integer(
     value: object,
     name: str,
 ) -> int:
+    """Validate and return a positive integer setting."""
     if (
         isinstance(value, bool)
         or not isinstance(value, int)
@@ -67,6 +71,7 @@ def build_candidate_state(
     list[dict],
     CandidatePoolAnalysis,
 ]:
+    """Balance search results and analyze outfit feasibility."""
     candidate_items = (
         build_balanced_candidate_pool(
             search_results=search_results,
@@ -102,6 +107,7 @@ def retrieve_adaptive_gemini_candidates(
         Iterable[ItemCategory] | None
     ) = None,
 ) -> AdaptiveCandidateRetrievalResult:
+    """Retrieve candidates and expand an insufficient initial search."""
     retrieval_limit = (
         validate_positive_integer(
             retrieval_limit,

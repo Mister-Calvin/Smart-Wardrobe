@@ -1,3 +1,5 @@
+"""Build retrieval text and Gemini vectors for wardrobe items."""
+
 from google.genai import types
 
 from ai_models.gemini.gemini_client import (
@@ -15,6 +17,7 @@ def build_item_text(
     item_type: str | None,
     score: int | None,
 ) -> str:
+    """Convert wardrobe attributes into the text used for embedding."""
     cleaned_name = str(name or "").strip()
     cleaned_description = str(description or "").strip()
     cleaned_color = str(color or "").strip()
@@ -48,6 +51,7 @@ def item_to_vector(
     item_type: str | None,
     score: int | None,
 ) -> list[float]:
+    """Generate and validate a Gemini embedding for one wardrobe item."""
     item_text = build_item_text(
         name=name,
         description=description,
